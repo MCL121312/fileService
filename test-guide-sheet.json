@@ -1,0 +1,31 @@
+{
+  "patientInfo": {
+    "name": "张三",
+    "gender": "男",
+    "age": 35
+  },
+  "examDate": "2024-01-15",
+  "barcode": "TJ20240115001",
+  "hospitalName": "某市第一人民医院体检中心",
+  "examItems": [
+    { "name": "一般检查", "location": "1楼 A区", "completed": false },
+    { "name": "内科", "location": "2楼 B区", "completed": false },
+    { "name": "外科", "location": "2楼 C区", "completed": false },
+    { "name": "眼科", "location": "3楼 A区", "completed": false },
+    { "name": "耳鼻喉科", "location": "3楼 B区", "completed": false },
+    { "name": "血常规", "location": "1楼 检验科", "completed": false },
+    { "name": "尿常规", "location": "1楼 检验科", "completed": false },
+    { "name": "肝功能", "location": "1楼 检验科", "completed": false },
+    { "name": "心电图", "location": "2楼 心电室", "completed": false },
+    { "name": "B超", "location": "1楼 B超室", "completed": false },
+    { "name": "胸部X光", "location": "负1楼 放射科", "completed": false }
+  ],
+  "notes": [
+    "请空腹进行抽血检查，抽血前请勿进食",
+    "尿常规请留取中段尿",
+    "B超检查前需憋尿",
+    "请携带本指引单依次完成各项检查",
+    "检查完毕后请将指引单交回前台领取报告"
+  ]
+}
+

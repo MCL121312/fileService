@@ -1,0 +1,47 @@
+{
+  "patientInfo": {
+    "name": "张三",
+    "gender": "男",
+    "age": 35,
+    "idCard": "110101199001011234",
+    "examDate": "2025-11-26"
+  },
+  "examItems": [
+    {
+      "category": "血常规",
+      "items": [
+        { "name": "白细胞计数", "value": 6.5, "unit": "×10⁹/L", "reference": "4.0-10.0", "status": "normal" },
+        { "name": "红细胞计数", "value": 5.2, "unit": "×10¹²/L", "reference": "4.0-5.5", "status": "normal" },
+        { "name": "血红蛋白", "value": 158, "unit": "g/L", "reference": "120-160", "status": "normal" },
+        { "name": "血小板计数", "value": 245, "unit": "×10⁹/L", "reference": "100-300", "status": "normal" }
+      ]
+    },
+    {
+      "category": "肝功能",
+      "items": [
+        { "name": "谷丙转氨酶(ALT)", "value": 28, "unit": "U/L", "reference": "0-40", "status": "normal" },
+        { "name": "谷草转氨酶(AST)", "value": 52, "unit": "U/L", "reference": "0-40", "status": "high" },
+        { "name": "总胆红素", "value": 12.5, "unit": "μmol/L", "reference": "3.4-20.5", "status": "normal" }
+      ]
+    },
+    {
+      "category": "血脂",
+      "items": [
+        { "name": "总胆固醇", "value": 5.8, "unit": "mmol/L", "reference": "<5.2", "status": "high" },
+        { "name": "甘油三酯", "value": 1.5, "unit": "mmol/L", "reference": "<1.7", "status": "normal" },
+        { "name": "高密度脂蛋白", "value": 0.9, "unit": "mmol/L", "reference": ">1.0", "status": "low" }
+      ]
+    }
+  ],
+  "summary": {
+    "conclusion": "本次体检发现部分指标异常：谷草转氨酶偏高，总胆固醇偏高，高密度脂蛋白偏低。建议进一步检查并注意生活方式调整。",
+    "suggestions": [
+      "建议减少高脂肪、高胆固醇食物的摄入",
+      "增加有氧运动，每周至少150分钟中等强度运动",
+      "戒烟限酒，保持健康的生活习惯",
+      "3个月后复查肝功能和血脂",
+      "如有不适请及时就医"
+    ]
+  }
+}
+

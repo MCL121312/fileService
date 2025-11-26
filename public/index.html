@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>任务看板 - FileService</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>📋 任务看板</h1>
+      <div class="header-actions">
+        <span class="auto-refresh">
+          <input type="checkbox" id="autoRefresh" checked>
+          <label for="autoRefresh">自动刷新</label>
+        </span>
+        <button class="btn btn-primary" onclick="refreshAll()">🔄 刷新</button>
+      </div>
+    </header>
+
+    <section class="status-cards">
+      <div class="status-card" id="card-pending">
+        <div class="status-icon">⏳</div>
+        <div class="status-info">
+          <div class="status-count" id="count-pending">0</div>
+          <div class="status-label">等待中</div>
+        </div>
+      </div>
+      <div class="status-card" id="card-processing">
+        <div class="status-icon">⚙️</div>
+        <div class="status-info">
+          <div class="status-count" id="count-processing">0</div>
+          <div class="status-label">处理中</div>
+        </div>
+      </div>
+      <div class="status-card" id="card-completed">
+        <div class="status-icon">✅</div>
+        <div class="status-info">
+          <div class="status-count" id="count-completed">0</div>
+          <div class="status-label">已完成</div>
+        </div>
+      </div>
+      <div class="status-card" id="card-failed">
+        <div class="status-icon">❌</div>
+        <div class="status-info">
+          <div class="status-count" id="count-failed">0</div>
+          <div class="status-label">失败</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="system-status">
+      <h2>系统状态</h2>
+      <div class="system-info">
+        <div class="info-item">
+          <span class="info-label">浏览器池</span>
+          <span class="info-value" id="browser-pool">-</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">最大并发</span>
+          <span class="info-value" id="max-concurrent">-</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">可用模板</span>
+          <span class="info-value" id="template-count">-</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="task-section">
+      <div class="section-header">
+        <h2>任务列表</h2>
+        <div class="filter-group">
+          <select id="statusFilter" onchange="filterTasks()">
+            <option value="">全部状态</option>
+            <option value="pending">等待中</option>
+            <option value="processing">处理中</option>
+            <option value="completed">已完成</option>
+            <option value="failed">失败</option>
+          </select>
+        </div>
+      </div>
+      <div class="task-list" id="taskList">
+        <div class="empty-state">暂无任务</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script src="app.js"></script>
+</body>
+</html>
+

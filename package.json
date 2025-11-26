@@ -1,0 +1,28 @@
+{
+  "name": "fileService",
+  "version": "1.0.0",
+  "description": "体检报告生成服务 - JSON to PDF/Word",
+  "type": "module",
+  "main": "app.ts",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types --experimental-transform-types app.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.22.0",
+  "dependencies": {
+    "@hono/node-server": "^1.19.6",
+    "@types/nunjucks": "^3.2.6",
+    "docx": "^9.5.1",
+    "generic-pool": "^3.9.0",
+    "hono": "^4.10.6",
+    "nunjucks": "^3.2.4",
+    "puppeteer": "^24.31.0",
+    "typescript": "^5.9.3",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/generic-pool": "^3.8.3"
+  }
+}
