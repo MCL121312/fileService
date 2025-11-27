@@ -1,4 +1,4 @@
-import { templateManager } from '../core/template-manager.ts';
+import { templateManager } from '../core/templateManager.ts';
 import { healthReportTemplate } from './health-report/index.ts';
 import { guideSheetTemplate } from './guide-sheet/index.ts';
 

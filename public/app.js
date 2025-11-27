@@ -1,4 +1,4 @@
-const API_BASE = '/api/report';
+const TASKS_API = '/api/tasks';
 let allTasks = [];
 let refreshTimer = null;
 
@@ -36,41 +36,34 @@ function stopAutoRefresh() {
 // 刷新所有数据
 async function refreshAll() {
   try {
-    await Promise.all([fetchStatus(), fetchTasks()]);
+    await fetchTasks();
   } catch (err) {
     showToast('刷新失败: ' + err.message, true);
   }
 }
 
-// 获取状态
-async function fetchStatus() {
-  const res = await fetch(`${API_BASE}/status`);
-  const data = await res.json();
-
-  document.getElementById('count-pending').textContent = data.taskQueue.pending;
-  document.getElementById('count-processing').textContent = data.taskQueue.processing;
-  document.getElementById('count-completed').textContent = data.taskQueue.completed;
-  document.getElementById('count-failed').textContent = data.taskQueue.failed;
-
-  const pool = data.browserPool;
-  document.getElementById('browser-pool').textContent = 
-    `${pool.available}/${pool.size} 可用`;
-  document.getElementById('max-concurrent').textContent = data.taskQueue.maxConcurrent;
-  document.getElementById('template-count').textContent = data.templates;
-}
-
 // 获取任务列表
 async function fetchTasks() {
-  const res = await fetch(`${API_BASE}/tasks`);
+  const res = await fetch(`${TASKS_API}/getAllTasks`);
   const data = await res.json();
   allTasks = data.tasks;
+
+  // 更新统计
+  const counts = { pending: 0, processing: 0, completed: 0, failed: 0 };
+  allTasks.forEach(t => counts[t.status]++);
+
+  document.getElementById('count-pending').textContent = counts.pending;
+  document.getElementById('count-processing').textContent = counts.processing;
+  document.getElementById('count-completed').textContent = counts.completed;
+  document.getElementById('count-failed').textContent = counts.failed;
+
   filterTasks();
 }
 
 // 过滤任务
 function filterTasks() {
   const status = document.getElementById('statusFilter').value;
-  const filtered = status 
+  const filtered = status
     ? allTasks.filter(t => t.status === status)
     : allTasks;
   renderTasks(filtered);
@@ -79,7 +72,7 @@ function filterTasks() {
 // 渲染任务列表
 function renderTasks(tasks) {
   const container = document.getElementById('taskList');
-  
+
   if (tasks.length === 0) {
     container.innerHTML = '<div class="empty-state">暂无任务</div>';
     return;
@@ -89,27 +82,16 @@ function renderTasks(tasks) {
     <div class="task-item status-${task.status}">
       <span class="task-status-badge ${task.status}">${getStatusText(task.status)}</span>
       <div class="task-info">
-        <div class="task-filename">${task.filename}</div>
+        <div class="task-id">任务: ${task.taskId.slice(0, 8)}</div>
         <div class="task-meta">
-          <span>模板: ${task.templateId}</span>
-          <span>格式: ${task.format.toUpperCase()}</span>
-          <span>ID: ${task.id.slice(0, 8)}</span>
+          <span>报告: ${task.content?.reportId?.slice(0, 8) || '-'}</span>
         </div>
       </div>
-      <div class="task-time">
-        <div>${formatTime(task.createdAt)}</div>
-        ${task.completedAt ? `<div>${getDuration(task.startedAt, task.completedAt)}</div>` : ''}
-      </div>
       <div class="task-actions">
-        ${task.resultReady ? `
-          <button class="btn btn-sm btn-success" onclick="downloadTask('${task.id}', '${task.filename}')">
-            ⬇️ 下载
-          </button>
-        ` : ''}
-        ${task.error ? `
-          <button class="btn btn-sm btn-danger" onclick="showError('${task.id}')">
-            查看错误
-          </button>
+        ${task.content?.file ? `
+          <a class="btn btn-sm btn-success" href="${task.content.file}" target="_blank">
+            📄 查看
+          </a>
         ` : ''}
       </div>
     </div>
@@ -135,27 +117,11 @@ function getDuration(start, end) {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-// 下载任务
-async function downloadTask(taskId, filename) {
-  try {
-    const res = await fetch(`${API_BASE}/tasks/${taskId}/download`);
-    if (!res.ok) throw new Error('下载失败');
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('下载成功');
-  } catch (err) {
-    showToast('下载失败: ' + err.message, true);
-  }
-}
+
 
 // 显示错误详情
 function showError(taskId) {
-  const task = allTasks.find(t => t.id === taskId);
+  const task = allTasks.find(t => t.taskId === taskId);
   if (task && task.error) {
     alert(`错误代码: ${task.error.code}\n\n${task.error.message}\n\n${JSON.stringify(task.error.details, null, 2)}`);
   }

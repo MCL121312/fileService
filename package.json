@@ -13,6 +13,7 @@
   "packageManager": "pnpm@10.22.0",
   "dependencies": {
     "@hono/node-server": "^1.19.6",
+    "@scalar/hono-api-reference": "^0.9.25",
     "@types/nunjucks": "^3.2.6",
     "docx": "^9.5.1",
     "generic-pool": "^3.9.0",

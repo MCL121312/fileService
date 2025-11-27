@@ -9,7 +9,10 @@
 <body>
   <div class="container">
     <header class="header">
-      <h1>📋 任务看板</h1>
+      <div class="header-title">
+        <h1>📋 任务看板</h1>
+        <a href="/docs" target="_blank" class="docs-link">📖 API 文档</a>
+      </div>
       <div class="header-actions">
         <span class="auto-refresh">
           <input type="checkbox" id="autoRefresh" checked>
@@ -50,23 +53,7 @@
       </div>
     </section>
 
-    <section class="system-status">
-      <h2>系统状态</h2>
-      <div class="system-info">
-        <div class="info-item">
-          <span class="info-label">浏览器池</span>
-          <span class="info-value" id="browser-pool">-</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">最大并发</span>
-          <span class="info-value" id="max-concurrent">-</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">可用模板</span>
-          <span class="info-value" id="template-count">-</span>
-        </div>
-      </div>
-    </section>
+
 
     <section class="task-section">
       <div class="section-header">

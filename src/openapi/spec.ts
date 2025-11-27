@@ -1,0 +1,273 @@
+/** OpenAPI 3.1 规范定义 */
+export const openApiSpec = {
+  openapi: '3.1.0',
+  info: {
+    title: 'FileService API',
+    version: '3.0.0',
+    description: '报告生成服务 API - 支持多模板和任务队列，可生成 PDF 和 Word 格式的报告',
+  },
+  servers: [
+    { url: 'http://localhost:3000', description: '本地开发服务器' },
+  ],
+  tags: [
+    { name: '报告管理', description: '报告生成和查询' },
+    { name: '任务管理', description: '任务查询' },
+    { name: '文件资源', description: '文件直接访问' },
+  ],
+  paths: {
+    '/api/reports/generateReport': {
+      post: {
+        tags: ['报告管理'],
+        summary: '生成报告',
+        description: '创建报告生成任务，支持 PDF 和 Word 格式输出',
+        requestBody: {
+          required: true,
+          description: '报告生成请求',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/GenerateReportRequest' },
+              examples: {
+                'health-report': { $ref: '#/components/examples/GenerateHealthReportExample' },
+                'guide-sheet': { $ref: '#/components/examples/GenerateGuideSheetExample' },
+              },
+            },
+          },
+        },
+        responses: {
+          '201': { description: '报告生成任务已创建', content: { 'application/json': { schema: { $ref: '#/components/schemas/GenerateReportResponse' } } } },
+          '400': { description: '请求参数错误', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/api/reports/getReportTask/{reportId}': {
+      get: {
+        tags: ['报告管理'],
+        summary: '通过报告ID获取任务',
+        description: '根据报告 ID 获取关联的任务执行详情',
+        parameters: [
+          { name: 'reportId', in: 'path', required: true, description: '报告 ID', schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          '200': { description: '任务详情', content: { 'application/json': { schema: { $ref: '#/components/schemas/ReportTaskResponse' } } } },
+          '404': { description: '报告不存在', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/api/tasks/getAllTasks': {
+      get: {
+        tags: ['任务管理'],
+        summary: '获取任务列表',
+        description: '返回所有任务，支持按状态和时间范围筛选',
+        parameters: [
+          { name: 'status', in: 'query', description: '按状态筛选', schema: { type: 'string', enum: ['pending', 'processing', 'completed', 'failed'] } },
+          { name: 'startTime', in: 'query', description: '开始时间 (ISO 格式)', schema: { type: 'string', format: 'date-time' } },
+          { name: 'endTime', in: 'query', description: '结束时间 (ISO 格式)', schema: { type: 'string', format: 'date-time' } },
+        ],
+        responses: {
+          '200': { description: '任务列表', content: { 'application/json': { schema: { $ref: '#/components/schemas/TasksResponse' } } } },
+        },
+      },
+    },
+    '/api/tasks/getTask/{taskId}': {
+      get: {
+        tags: ['任务管理'],
+        summary: '获取单个任务',
+        description: '根据任务 ID 获取任务详情',
+        parameters: [
+          { name: 'taskId', in: 'path', required: true, description: '任务 ID', schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          '200': { description: '任务详情', content: { 'application/json': { schema: { $ref: '#/components/schemas/TaskDetailResponse' } } } },
+          '404': { description: '任务不存在', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/files/{filename}': {
+      get: {
+        tags: ['文件资源'],
+        summary: '直接访问文件',
+        description: '通过文件名直接访问/下载报告文件，格式为 {reportId}.{pdf|docx}',
+        parameters: [
+          { name: 'filename', in: 'path', required: true, description: '文件名 (如 xxx.pdf 或 xxx.docx)', schema: { type: 'string', pattern: '^[a-f0-9-]+\\.(pdf|docx)$' } },
+        ],
+        responses: {
+          '200': { description: '文件内容', content: { 'application/pdf': {}, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {} } },
+          '202': { description: '文件尚未生成完成', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '400': { description: '无效的文件名格式', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '404': { description: '文件不存在', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+  },
+  components: {
+    schemas: {
+      ErrorResponse: {
+        type: 'object',
+        properties: {
+          error: { type: 'string', description: '错误信息' },
+          message: { type: 'string', description: '详细错误描述' },
+          details: { description: '错误详情' },
+        },
+        required: ['error'],
+      },
+      ReportStatus: { type: 'string', enum: ['pending', 'processing', 'completed', 'failed'] },
+      OutputFormat: { type: 'string', enum: ['pdf', 'word'] },
+      GenerateReportRequest: {
+        type: 'object',
+        description: '生成报告请求',
+        properties: {
+          templateId: { type: 'string', description: '模板 ID (health-report, guide-sheet)' },
+          format: { $ref: '#/components/schemas/OutputFormat', default: 'pdf' },
+          data: { oneOf: [{ $ref: '#/components/schemas/HealthReportData' }, { $ref: '#/components/schemas/GuideSheetData' }] },
+        },
+        required: ['templateId', 'data'],
+      },
+      ContentObject: {
+        type: 'object',
+        description: '任务产出内容',
+        properties: {
+          reportId: { type: 'string', format: 'uuid', description: '报告 ID' },
+          file: { type: 'string', nullable: true, description: '文件资源链接 (完成后可用，如 /files/{reportId}.pdf)' },
+        },
+        required: ['reportId'],
+      },
+      TaskDetail: {
+        type: 'object',
+        description: '任务执行详情',
+        properties: {
+          templateId: { type: 'string', description: '模板 ID' },
+          format: { $ref: '#/components/schemas/OutputFormat' },
+          createdAt: { type: 'string', format: 'date-time' },
+          startedAt: { type: 'string', format: 'date-time', nullable: true },
+          completedAt: { type: 'string', format: 'date-time', nullable: true },
+          duration: { type: 'integer', nullable: true, description: '执行耗时（毫秒）' },
+          error: { type: 'object', nullable: true, description: '错误信息' },
+        },
+        required: ['templateId', 'format', 'createdAt'],
+      },
+      GenerateReportResponse: {
+        type: 'object',
+        description: '生成报告响应',
+        properties: {
+          taskId: { type: 'string', format: 'uuid', description: '任务 ID' },
+          status: { $ref: '#/components/schemas/ReportStatus' },
+          content: { $ref: '#/components/schemas/ContentObject' },
+        },
+        required: ['taskId', 'status', 'content'],
+      },
+      ReportTaskResponse: {
+        type: 'object',
+        description: '报告关联的任务详情',
+        properties: {
+          taskId: { type: 'string', format: 'uuid', description: '任务 ID' },
+          status: { $ref: '#/components/schemas/ReportStatus' },
+          content: { $ref: '#/components/schemas/ContentObject' },
+          detail: { $ref: '#/components/schemas/TaskDetail' },
+        },
+        required: ['taskId', 'status', 'content', 'detail'],
+      },
+      TasksResponse: {
+        type: 'object',
+        properties: {
+          tasks: { type: 'array', items: { $ref: '#/components/schemas/TaskListItem' } },
+        },
+      },
+      TaskListItem: {
+        type: 'object',
+        description: '任务列表项',
+        properties: {
+          taskId: { type: 'string', format: 'uuid', description: '任务 ID' },
+          status: { $ref: '#/components/schemas/ReportStatus' },
+          content: { $ref: '#/components/schemas/ContentObject' },
+        },
+        required: ['taskId', 'status', 'content'],
+      },
+      TaskDetailResponse: {
+        type: 'object',
+        description: '单个任务详情响应',
+        properties: {
+          taskId: { type: 'string', format: 'uuid', description: '任务 ID' },
+          status: { $ref: '#/components/schemas/ReportStatus' },
+          content: { $ref: '#/components/schemas/ContentObject' },
+          detail: { $ref: '#/components/schemas/TaskDetail' },
+        },
+        required: ['taskId', 'status', 'content', 'detail'],
+      },
+      PatientInfo: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', minLength: 1 },
+          gender: { type: 'string', enum: ['男', '女'] },
+          age: { type: 'integer', minimum: 0, maximum: 150 },
+          idCard: { type: 'string' },
+          examDate: { type: 'string' },
+        },
+        required: ['name', 'gender', 'age'],
+      },
+      ExamItem: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          value: { oneOf: [{ type: 'string' }, { type: 'number' }] },
+          unit: { type: 'string' },
+          reference: { type: 'string' },
+          status: { type: 'string', enum: ['normal', 'high', 'low'] },
+        },
+        required: ['name', 'value', 'unit', 'reference', 'status'],
+      },
+      HealthReportData: {
+        type: 'object',
+        description: '健康体检报告数据',
+        properties: {
+          patientInfo: { allOf: [{ $ref: '#/components/schemas/PatientInfo' }], properties: { idCard: { type: 'string' }, examDate: { type: 'string' } }, required: ['idCard', 'examDate'] },
+          examItems: { type: 'array', items: { type: 'object', properties: { category: { type: 'string' }, items: { type: 'array', items: { $ref: '#/components/schemas/ExamItem' } } } } },
+          summary: { type: 'object', properties: { conclusion: { type: 'string' }, suggestions: { type: 'array', items: { type: 'string' } } }, required: ['conclusion', 'suggestions'] },
+        },
+        required: ['patientInfo', 'examItems', 'summary'],
+      },
+      GuideSheetData: {
+        type: 'object',
+        description: '体检指引单数据',
+        properties: {
+          patientInfo: { $ref: '#/components/schemas/PatientInfo' },
+          examDate: { type: 'string' },
+          barcode: { type: 'string' },
+          hospitalName: { type: 'string', default: '健康体检中心' },
+          examItems: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, location: { type: 'string' }, completed: { type: 'boolean', default: false } } } },
+          notes: { type: 'array', items: { type: 'string' } },
+        },
+        required: ['patientInfo', 'examDate', 'barcode', 'examItems'],
+      },
+    },
+    examples: {
+      GenerateHealthReportExample: {
+        summary: '生成健康体检报告示例',
+        value: {
+          templateId: 'health-report',
+          format: 'pdf',
+          data: {
+            patientInfo: { name: '张三', gender: '男', age: 35, idCard: '110101199001011234', examDate: '2025-11-27' },
+            examItems: [{ category: '血常规', items: [{ name: '白细胞计数', value: 6.5, unit: '10^9/L', reference: '4.0-10.0', status: 'normal' }] }],
+            summary: { conclusion: '体检结果基本正常', suggestions: ['建议定期复查', '保持良好作息'] },
+          },
+        },
+      },
+      GenerateGuideSheetExample: {
+        summary: '生成体检指引单示例',
+        value: {
+          templateId: 'guide-sheet',
+          format: 'pdf',
+          data: {
+            patientInfo: { name: '李四', gender: '女', age: 28 },
+            examDate: '2025-11-27',
+            barcode: 'TJ20251127001',
+            hospitalName: '健康体检中心',
+            examItems: [{ name: '血常规', location: '检验科 201', completed: false }, { name: '心电图', location: '心电图室 102', completed: false }],
+            notes: ['请空腹进行抽血检查', '请携带本指引单依次完成各项检查'],
+          },
+        },
+      },
+    },
+  },
+};
+

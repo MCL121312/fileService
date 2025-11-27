@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>体检报告 - 样式预览</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="header">
+    <h1>健康体检报告</h1>
+    <p>Health Examination Report</p>
+  </div>
+
+  <div class="patient-info">
+    <h2>基本信息</h2>
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="label">姓名：</span>
+        <span class="value">张三</span>
+      </div>
+      <div class="info-item">
+        <span class="label">性别：</span>
+        <span class="value">男</span>
+      </div>
+      <div class="info-item">
+        <span class="label">年龄：</span>
+        <span class="value">35 岁</span>
+      </div>
+      <div class="info-item">
+        <span class="label">身份证：</span>
+        <span class="value">310***********1234</span>
+      </div>
+      <div class="info-item">
+        <span class="label">体检日期：</span>
+        <span class="value">2024-01-15</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="exam-section">
+    <h3>血常规</h3>
+    <table class="exam-table">
+      <thead>
+        <tr>
+          <th style="width: 25%">项目名称</th>
+          <th style="width: 20%">检测结果</th>
+          <th style="width: 15%">单位</th>
+          <th style="width: 25%">参考范围</th>
+          <th style="width: 15%">状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>白细胞计数</td>
+          <td>6.5</td>
+          <td>10^9/L</td>
+          <td>4.0-10.0</td>
+          <td class="status-normal">正常</td>
+        </tr>
+        <tr>
+          <td>红细胞计数</td>
+          <td>5.8</td>
+          <td>10^12/L</td>
+          <td>4.0-5.5</td>
+          <td class="status-high">偏高 ↑</td>
+        </tr>
+        <tr>
+          <td>血红蛋白</td>
+          <td>110</td>
+          <td>g/L</td>
+          <td>120-160</td>
+          <td class="status-low">偏低 ↓</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="exam-section">
+    <h3>肝功能</h3>
+    <table class="exam-table">
+      <thead>
+        <tr>
+          <th style="width: 25%">项目名称</th>
+          <th style="width: 20%">检测结果</th>
+          <th style="width: 15%">单位</th>
+          <th style="width: 25%">参考范围</th>
+          <th style="width: 15%">状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>谷丙转氨酶</td>
+          <td>25</td>
+          <td>U/L</td>
+          <td>0-40</td>
+          <td class="status-normal">正常</td>
+        </tr>
+        <tr>
+          <td>谷草转氨酶</td>
+          <td>22</td>
+          <td>U/L</td>
+          <td>0-40</td>
+          <td class="status-normal">正常</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="summary">
+    <h2>体检结论与建议</h2>
+    <div class="conclusion">
+      <strong>总体结论：</strong>本次体检结果显示，大部分指标正常，部分指标存在轻微异常，建议定期复查。
+    </div>
+    <div class="suggestions">
+      <h4>健康建议：</h4>
+      <ul>
+        <li>保持规律作息，每天保证7-8小时睡眠</li>
+        <li>适当增加有氧运动，每周至少3次</li>
+        <li>饮食均衡，多吃蔬菜水果</li>
+        <li>建议3个月后复查血常规</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>本报告仅供参考，如有疑问请咨询专业医生</p>
+    <p>报告生成时间：2024-01-15 10:30:00</p>
+  </div>
+</body>
+</html>
+

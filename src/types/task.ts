@@ -8,6 +8,8 @@ export type OutputFormat = 'pdf' | 'word';
 export interface Task {
   /** 任务 ID */
   id: string;
+  /** 报告 ID (业务层面，可以是日期+病人号等格式) */
+  reportId: string;
   /** 模板 ID */
   templateId: string;
   /** 输出格式 */
@@ -16,6 +18,8 @@ export interface Task {
   status: TaskStatus;
   /** 输出文件名 */
   filename: string;
+  /** 文件存储路径 (完成后才有) */
+  filePath?: string | undefined;
   /** 创建时间 */
   createdAt: Date;
   /** 开始处理时间 */
@@ -24,8 +28,6 @@ export interface Task {
   completedAt?: Date;
   /** 输入数据 */
   data: unknown;
-  /** 输出结果 (Buffer 转 base64 存储) */
-  result?: string;
   /** Content-Type */
   contentType?: string;
   /** 错误信息 */
@@ -49,6 +51,7 @@ export interface CreateTaskRequest {
 /** 任务响应 (不含结果数据) */
 export interface TaskResponse {
   id: string;
+  reportId: string;
   templateId: string;
   format: OutputFormat;
   status: TaskStatus;

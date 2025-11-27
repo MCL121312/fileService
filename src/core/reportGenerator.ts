@@ -1,5 +1,5 @@
-import { browserPool } from './browser-pool.ts';
-import { templateManager } from './template-manager.ts';
+import { browserPool } from './browserPool.ts';
+import { templateManager } from './templateManager.ts';
 import type { GenerateResult } from '../types/template.ts';
 
 /** PDF 生成选项 */
@@ -14,6 +14,16 @@ export interface PdfOptions {
   };
 }
 
+/** 报告生成器接口 */
+export interface ReportGenerator {
+  /** 生成 PDF */
+  generatePdf(templateId: string, data: unknown, options?: PdfOptions): Promise<GenerateResult>;
+  /** 生成 Word */
+  generateWord(templateId: string, data: unknown): Promise<GenerateResult>;
+  /** 通用生成方法 */
+  generate(templateId: string, data: unknown, format: 'pdf' | 'word', options?: PdfOptions): Promise<GenerateResult>;
+}
+
 const defaultPdfOptions: PdfOptions = {
   format: 'A4',
   landscape: false,
@@ -25,10 +35,10 @@ const defaultPdfOptions: PdfOptions = {
   },
 };
 
-/** 报告生成器 */
-export class ReportGenerator {
+/** 创建报告生成器 */
+export function createReportGenerator(): ReportGenerator {
   /** 生成 PDF */
-  async generatePdf(
+  async function generatePdf(
     templateId: string,
     data: unknown,
     options: PdfOptions = {}
@@ -46,10 +56,10 @@ export class ReportGenerator {
         await page.setContent(html, { waitUntil: 'networkidle0' });
 
         const pdf = await page.pdf({
-          format: finalOptions.format,
-          landscape: finalOptions.landscape,
+          format: finalOptions.format ?? 'A4',
+          landscape: finalOptions.landscape ?? false,
           printBackground: true,
-          margin: finalOptions.margin,
+          margin: finalOptions.margin ?? { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' },
         });
 
         return Buffer.from(pdf);
@@ -67,7 +77,7 @@ export class ReportGenerator {
   }
 
   /** 生成 Word */
-  async generateWord(templateId: string, data: unknown): Promise<GenerateResult> {
+  async function generateWord(templateId: string, data: unknown): Promise<GenerateResult> {
     if (!templateManager.supportsWord(templateId)) {
       throw new Error(`模板 "${templateId}" 不支持 Word 格式`);
     }
@@ -83,7 +93,7 @@ export class ReportGenerator {
   }
 
   /** 通用生成方法 */
-  async generate(
+  async function generate(
     templateId: string,
     data: unknown,
     format: 'pdf' | 'word',
@@ -96,13 +106,19 @@ export class ReportGenerator {
     }
 
     if (format === 'pdf') {
-      return this.generatePdf(templateId, validation.data, options);
+      return generatePdf(templateId, validation.data, options);
     } else {
-      return this.generateWord(templateId, validation.data);
+      return generateWord(templateId, validation.data);
     }
   }
+
+  return {
+    generatePdf,
+    generateWord,
+    generate,
+  };
 }
 
 /** 全局报告生成器实例 */
-export const reportGenerator = new ReportGenerator();
+export const reportGenerator = createReportGenerator();
 

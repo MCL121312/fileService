@@ -37,8 +37,29 @@ body {
   margin-bottom: 24px;
 }
 
-.header h1 {
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-title h1 {
   font-size: 24px;
+}
+
+.docs-link {
+  font-size: 14px;
+  color: #3b82f6;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #eff6ff;
+  transition: all 0.2s;
+}
+
+.docs-link:hover {
+  background: #dbeafe;
+  color: #2563eb;
 }
 
 .header-actions {
