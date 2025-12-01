@@ -80,9 +80,9 @@ tasks.get('/getTask/:taskId', (c) => {
 });
 
 /** DELETE /deleteTask/:taskId - 删除任务记录 */
-tasks.delete('/deleteTask/:taskId', (c) => {
+tasks.delete('/deleteTask/:taskId', async (c) => {
   const taskId = c.req.param('taskId');
-  const result = taskManager.deleteTask(taskId);
+  const result = await taskManager.deleteTask(taskId);
 
   if (!result.success) {
     return c.json({ error: result.error }, 404);

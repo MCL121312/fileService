@@ -19,11 +19,13 @@
     "generic-pool": "^3.9.0",
     "hono": "^4.10.6",
     "puppeteer": "^24.31.0",
+    "sqlite3": "^5.1.7",
     "typescript": "^5.9.3",
     "vue": "^3.5.25",
     "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@types/generic-pool": "^3.8.3"
+    "@types/generic-pool": "^3.8.3",
+    "@types/sqlite3": "^5.1.0"
   }
 }

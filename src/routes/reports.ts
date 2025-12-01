@@ -33,7 +33,7 @@ reports.post('/generateReport', async (c) => {
       return c.json({ error: '缺少必填参数 data' }, 400);
     }
 
-    const task = taskManager.create({ templateId, format, data });
+    const task = await taskManager.create({ templateId, format, data });
 
     return c.json({
       taskId: task.id,

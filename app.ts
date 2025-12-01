@@ -5,24 +5,35 @@ import { taskManager } from './src/core/taskManager.ts';
 
 const port = Number(process.env.PORT) || 3000;
 
-const server = serve({
-  fetch: app.fetch,
-  port,
-}, () => {
-  printStartupInfo();
-});
+/** 启动服务 */
+async function start() {
+  // 初始化任务管理器（连接数据库）
+  await taskManager.init();
 
-/** 优雅关闭 */
-async function gracefulShutdown(signal: string) {
-  console.log(`\n📥 收到 ${signal} 信号，正在关闭服务...`);
+  const server = serve({
+    fetch: app.fetch,
+    port,
+  }, () => {
+    printStartupInfo();
+  });
 
-  server.close();
-  taskManager.shutdown();
-  await browserPool.shutdown();
+  /** 优雅关闭 */
+  async function gracefulShutdown(signal: string) {
+    console.log(`\n📥 收到 ${signal} 信号，正在关闭服务...`);
 
-  console.log('👋 服务已关闭');
-  process.exit(0);
+    server.close();
+    await taskManager.shutdown();
+    await browserPool.shutdown();
+
+    console.log('👋 服务已关闭');
+    process.exit(0);
+  }
+
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 }
 
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+start().catch((err) => {
+  console.error('❌ 启动失败:', err);
+  process.exit(1);
+});

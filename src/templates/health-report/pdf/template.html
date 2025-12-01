@@ -1,198 +1,206 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>体检报告</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "微软雅黑", "Microsoft YaHei", sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #333;
+        padding: 40px;
+      }
+      .report-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #1976d2;
+        h1 {
+          font-size: 28px;
+          color: #1976d2;
+          margin-bottom: 10px;
         }
-        body {
-            font-family: "微软雅黑", "Microsoft YaHei", sans-serif;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #333;
-            padding: 40px;
+        .generated-at {
+          color: #666;
+          font-size: 12px;
         }
-        .report-header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #1976d2;
-        }
-        .report-header h1 {
-            font-size: 28px;
+      }
+
+      .section {
+        margin-bottom: 25px;
+      }
+      .section-title {
+        font-size: 18px;
+        color: #1976d2;
+        border-left: 4px solid #1976d2;
+        padding-left: 10px;
+        margin-bottom: 15px;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px 20px;
+      }
+      .info-item {
+        display: flex;
+      }
+      .info-item .label {
+        color: #666;
+        min-width: 70px;
+      }
+      .info-item .value {
+        font-weight: 500;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 10px 12px;
+        text-align: left;
+      }
+      th {
+        background-color: #f5f7fa;
+        font-weight: 500;
+        color: #333;
+      }
+      .status-normal {
+        color: #4caf50;
+      }
+      .status-high {
+        color: #f44336;
+        font-weight: 500;
+      }
+      .status-low {
+        color: #ff9800;
+        font-weight: 500;
+      }
+      .summary-box {
+        background-color: #f5f7fa;
+        padding: 20px;
+        border-radius: 8px;
+        .conclusion {
+          margin-bottom: 15px;
+          .label {
+            font-weight: 500;
             color: #1976d2;
-            margin-bottom: 10px;
+          }
         }
-        .report-header .generated-at {
-            color: #666;
-            font-size: 12px;
+      }
+
+      .suggestions-list {
+        list-style: none;
+        li {
+          padding: 5px 0;
+          padding-left: 20px;
+          position: relative;
         }
-        .section {
-            margin-bottom: 25px;
+        li::before {
+          content: "•";
+          position: absolute;
+          left: 5px;
+          color: #1976d2;
         }
-        .section-title {
-            font-size: 18px;
-            color: #1976d2;
-            border-left: 4px solid #1976d2;
-            padding-left: 10px;
-            margin-bottom: 15px;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px 20px;
-        }
-        .info-item {
-            display: flex;
-        }
-        .info-item .label {
-            color: #666;
-            min-width: 70px;
-        }
-        .info-item .value {
-            font-weight: 500;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #f5f7fa;
-            font-weight: 500;
-            color: #333;
-        }
-        .status-normal {
-            color: #4caf50;
-        }
-        .status-high {
-            color: #f44336;
-            font-weight: 500;
-        }
-        .status-low {
-            color: #ff9800;
-            font-weight: 500;
-        }
-        .summary-box {
-            background-color: #f5f7fa;
-            padding: 20px;
-            border-radius: 8px;
-        }
-        .summary-box .conclusion {
-            margin-bottom: 15px;
-        }
-        .summary-box .conclusion .label {
-            font-weight: 500;
-            color: #1976d2;
-        }
-        .suggestions-list {
-            list-style: none;
-        }
-        .suggestions-list li {
-            padding: 5px 0;
-            padding-left: 20px;
-            position: relative;
-        }
-        .suggestions-list li::before {
-            content: "•";
-            position: absolute;
-            left: 5px;
-            color: #1976d2;
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="app">
-        <!-- 报告头部 -->
-        <div class="report-header">
-            <h1>健康体检报告</h1>
-            <div class="generated-at">生成时间：{{ generatedAt }}</div>
-        </div>
+      <!-- 报告头部 -->
+      <div class="report-header">
+        <h1>健康体检报告</h1>
+        <div class="generated-at">生成时间：{{ generatedAt }}</div>
+      </div>
 
-        <!-- 基本信息 -->
-        <div class="section">
-            <h2 class="section-title">基本信息</h2>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="label">姓名：</span>
-                    <span class="value">{{ patientInfo.name }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">性别：</span>
-                    <span class="value">{{ patientInfo.gender }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">年龄：</span>
-                    <span class="value">{{ patientInfo.age }} 岁</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">身份证：</span>
-                    <span class="value">{{ patientInfo.idCard }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">体检日期：</span>
-                    <span class="value">{{ patientInfo.examDate }}</span>
-                </div>
-            </div>
+      <!-- 基本信息 -->
+      <div class="section">
+        <h2 class="section-title">基本信息</h2>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">姓名：</span>
+            <span class="value">{{ patientInfo.name }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">性别：</span>
+            <span class="value">{{ patientInfo.gender }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">年龄：</span>
+            <span class="value">{{ patientInfo.age }} 岁</span>
+          </div>
+          <div class="info-item">
+            <span class="label">身份证：</span>
+            <span class="value">{{ patientInfo.idCard }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">体检日期：</span>
+            <span class="value">{{ patientInfo.examDate }}</span>
+          </div>
         </div>
+      </div>
 
-        <!-- 检查项目 -->
-        <div class="section" v-for="category in examItems" :key="category.category">
-            <h2 class="section-title">{{ category.category }}</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>项目名称</th>
-                        <th>检测结果</th>
-                        <th>单位</th>
-                        <th>参考范围</th>
-                        <th>状态</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="item in category.items" :key="item.name">
-                        <td>{{ item.name }}</td>
-                        <td>{{ item.value }}</td>
-                        <td>{{ item.unit }}</td>
-                        <td>{{ item.reference }}</td>
-                        <td :class="'status-' + item.status">
-                            <span v-if="item.status === 'normal'">正常</span>
-                            <span v-else-if="item.status === 'high'">偏高 ↑</span>
-                            <span v-else>偏低 ↓</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+      <!-- 检查项目 -->
+      <div
+        class="section"
+        v-for="category in examItems"
+        :key="category.category">
+        <h2 class="section-title">{{ category.category }}</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>项目名称</th>
+              <th>检测结果</th>
+              <th>单位</th>
+              <th>参考范围</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in category.items" :key="item.name">
+              <td>{{ item.name }}</td>
+              <td>{{ item.value }}</td>
+              <td>{{ item.unit }}</td>
+              <td>{{ item.reference }}</td>
+              <td :class="'status-' + item.status">
+                <span v-if="item.status === 'normal'">正常</span>
+                <span v-else-if="item.status === 'high'">偏高 ↑</span>
+                <span v-else>偏低 ↓</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <!-- 体检结论 -->
-        <div class="section">
-            <h2 class="section-title">体检结论与建议</h2>
-            <div class="summary-box">
-                <div class="conclusion">
-                    <span class="label">总体结论：</span>
-                    <span>{{ summary.conclusion }}</span>
-                </div>
-                <div>
-                    <span class="label">健康建议：</span>
-                    <ul class="suggestions-list">
-                        <li v-for="(suggestion, index) in summary.suggestions" :key="index">
-                            {{ suggestion }}
-                        </li>
-                    </ul>
-                </div>
-            </div>
+      <!-- 体检结论 -->
+      <div class="section">
+        <h2 class="section-title">体检结论与建议</h2>
+        <div class="summary-box">
+          <div class="conclusion">
+            <span class="label">总体结论：</span>
+            <span>{{ summary.conclusion }}</span>
+          </div>
+          <div>
+            <span class="label">健康建议：</span>
+            <ul class="suggestions-list">
+              <li
+                v-for="(suggestion, index) in summary.suggestions"
+                :key="index">
+                {{ suggestion }}
+              </li>
+            </ul>
+          </div>
         </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>

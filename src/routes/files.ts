@@ -44,7 +44,7 @@ files.get('/:filename', (c) => {
 });
 
 /** DELETE /:filename - 删除文件资源 */
-files.delete('/:filename', (c) => {
+files.delete('/:filename', async (c) => {
   const filename = c.req.param('filename');
 
   // 解析文件名: {reportId}.{ext}
@@ -54,7 +54,7 @@ files.delete('/:filename', (c) => {
   }
 
   const [, reportId] = match;
-  const result = taskManager.deleteFile(reportId);
+  const result = await taskManager.deleteFile(reportId);
 
   if (!result.success) {
     return c.json({ error: result.error }, 404);

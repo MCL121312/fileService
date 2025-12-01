@@ -1,9 +1,10 @@
 import { randomUUID } from 'crypto';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { Task, TaskStatus, TaskResponse, CreateTaskRequest, TaskError, OutputFormat } from '../types/task.ts';
 import { reportGenerator } from './reportGenerator.ts';
 import { templateManager } from './templateManager.ts';
+import { database } from './database.ts';
 
 /** 文件扩展名映射 */
 const FORMAT_EXTENSIONS: Record<OutputFormat, string> = {
@@ -24,12 +25,7 @@ function getContentType(format: OutputFormat): string {
 
 /** 数据目录 */
 const DATA_DIR = 'data';
-const TASKS_FILE = join(DATA_DIR, 'tasks.json');
 const FILES_DIR = join(DATA_DIR, 'files');
-
-/** 日志目录 */
-const LOG_DIR = 'logs';
-const LOG_FILE = join(LOG_DIR, 'tasks.log');
 
 /** 确保目录存在 */
 function ensureDir(dir: string): void {
@@ -38,114 +34,125 @@ function ensureDir(dir: string): void {
   }
 }
 
-/** 持久化任务的数据结构 (不含 result 大数据) */
-interface PersistedTask {
+/** 数据库任务记录结构 */
+interface TaskRow {
   id: string;
-  reportId: string;
-  templateId: string;
+  report_id: string;
+  template_id: string;
   format: OutputFormat;
   status: TaskStatus;
   filename: string;
-  /** 文件路径 (完成后才有) */
-  filePath?: string | undefined;
-  createdAt: string;
-  startedAt?: string | undefined;
-  completedAt?: string | undefined;
-  error?: TaskError | undefined;
+  file_path: string | null;
+  content_type: string | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  error_code: string | null;
+  error_message: string | null;
 }
 
-/** 从文件加载任务 */
-function loadTasks(): Map<string, Task> {
-  const tasks = new Map<string, Task>();
+/** 将数据库行转换为 Task 对象 */
+function rowToTask(row: TaskRow): Task {
+  const task: Task = {
+    id: row.id,
+    reportId: row.report_id,
+    templateId: row.template_id,
+    format: row.format,
+    status: row.status,
+    filename: row.filename,
+    filePath: row.file_path || undefined,
+    contentType: row.content_type || undefined,
+    createdAt: new Date(row.created_at),
+    data: {},
+  };
 
-  if (!existsSync(TASKS_FILE)) {
-    return tasks;
+  if (row.started_at) task.startedAt = new Date(row.started_at);
+  if (row.completed_at) task.completedAt = new Date(row.completed_at);
+  if (row.error_code) {
+    task.error = { code: row.error_code, message: row.error_message || '' };
   }
 
+  return task;
+}
+
+/** 从数据库加载任务 */
+async function loadTasks(): Promise<Map<string, Task>> {
+  const tasks = new Map<string, Task>();
+
   try {
-    const data = readFileSync(TASKS_FILE, 'utf-8');
-    const persisted: PersistedTask[] = JSON.parse(data);
+    await database.init();
 
-    for (const p of persisted) {
-      // 处理中的任务重启后标记为失败
-      let status = p.status;
-      let completedAt = p.completedAt ? new Date(p.completedAt) : undefined;
-      let error = p.error;
+    // 将处理中的任务标记为失败（服务重启）
+    await database.run(
+      `UPDATE tasks SET status = 'failed', completed_at = ?, error_code = 'SERVER_RESTART', error_message = '服务重启，任务中断' WHERE status IN ('pending', 'processing')`,
+      [new Date().toISOString()]
+    );
 
-      if (status === 'pending' || status === 'processing') {
-        status = 'failed';
-        completedAt = new Date();
-        error = { code: 'SERVER_RESTART', message: '服务重启，任务中断' };
-      }
-
-      const task: Task = {
-        id: p.id,
-        reportId: p.reportId || p.id, // 兼容旧数据
-        templateId: p.templateId,
-        format: p.format,
-        status,
-        filename: p.filename,
-        filePath: p.filePath,
-        createdAt: new Date(p.createdAt),
-        data: {}, // 原始数据不持久化
-      };
-
-      if (p.startedAt) task.startedAt = new Date(p.startedAt);
-      if (completedAt) task.completedAt = completedAt;
-      if (error) task.error = error;
-
+    const rows = await database.all<TaskRow>('SELECT * FROM tasks');
+    for (const row of rows) {
+      const task = rowToTask(row);
       tasks.set(task.id, task);
     }
 
-    console.log(`📂 从文件加载了 ${tasks.size} 个任务`);
+    console.log(`📂 从数据库加载了 ${tasks.size} 个任务`);
   } catch (err) {
-    console.error('⚠️ 加载任务文件失败:', err);
+    console.error('⚠️ 加载任务失败:', err);
   }
 
   return tasks;
 }
 
-/** 保存任务到文件 */
-function saveTasks(tasks: Map<string, Task>): void {
-  ensureDir(DATA_DIR);
-
-  const persisted: PersistedTask[] = [];
-  for (const task of tasks.values()) {
-    persisted.push({
-      id: task.id,
-      reportId: task.reportId,
-      templateId: task.templateId,
-      format: task.format,
-      status: task.status,
-      filename: task.filename,
-      filePath: task.filePath,
-      createdAt: task.createdAt.toISOString(),
-      startedAt: task.startedAt?.toISOString(),
-      completedAt: task.completedAt?.toISOString(),
-      error: task.error,
-    });
-  }
-
-  writeFileSync(TASKS_FILE, JSON.stringify(persisted, null, 2));
+/** 保存单个任务到数据库 */
+async function saveTask(task: Task): Promise<void> {
+  await database.run(
+    `INSERT OR REPLACE INTO tasks (id, report_id, template_id, format, status, filename, file_path, content_type, created_at, started_at, completed_at, error_code, error_message)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      task.id,
+      task.reportId,
+      task.templateId,
+      task.format,
+      task.status,
+      task.filename,
+      task.filePath || null,
+      task.contentType || null,
+      task.createdAt.toISOString(),
+      task.startedAt?.toISOString() || null,
+      task.completedAt?.toISOString() || null,
+      task.error?.code || null,
+      task.error?.message || null,
+    ]
+  );
 }
 
-/** 写入任务日志 */
-function writeTaskLog(task: Task, event: 'created' | 'started' | 'completed' | 'failed'): void {
-  ensureDir(LOG_DIR);
-  const logEntry = {
-    timestamp: new Date().toISOString(),
-    event,
-    taskId: task.id,
-    templateId: task.templateId,
-    format: task.format,
-    filename: task.filename,
-    status: task.status,
-    duration: task.startedAt && task.completedAt
-      ? task.completedAt.getTime() - task.startedAt.getTime()
-      : undefined,
-    error: task.error,
-  };
-  appendFileSync(LOG_FILE, JSON.stringify(logEntry) + '\n');
+/** 删除任务记录 */
+async function deleteTaskFromDb(taskId: string): Promise<void> {
+  await database.run('DELETE FROM task_logs WHERE task_id = ?', [taskId]);
+  await database.run('DELETE FROM tasks WHERE id = ?', [taskId]);
+}
+
+/** 写入任务日志到数据库 */
+async function writeTaskLog(task: Task, event: 'created' | 'started' | 'completed' | 'failed'): Promise<void> {
+  const duration = task.startedAt && task.completedAt
+    ? task.completedAt.getTime() - task.startedAt.getTime()
+    : null;
+
+  await database.run(
+    `INSERT INTO task_logs (task_id, event, template_id, format, filename, status, duration, error_code, error_message, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      task.id,
+      event,
+      task.templateId,
+      task.format,
+      task.filename,
+      task.status,
+      duration,
+      task.error?.code || null,
+      task.error?.message || null,
+      new Date().toISOString(),
+    ]
+  );
 }
 
 /** 生成规范的文件名 */
@@ -183,7 +190,9 @@ export interface TaskManagerConfig {
 
 /** 任务管理器接口 */
 export interface TaskManager {
-  create: (request: CreateTaskRequest) => Task;
+  /** 初始化（加载数据库数据） */
+  init: () => Promise<void>;
+  create: (request: CreateTaskRequest) => Promise<Task>;
   get: (taskId: string) => Task | undefined;
   getByReportId: (reportId: string) => Task | undefined;
   getResponse: (taskId: string) => TaskResponse | undefined;
@@ -199,9 +208,9 @@ export interface TaskManager {
     failed: number;
   };
   list: (status?: TaskStatus) => TaskResponse[];
-  deleteFile: (reportId: string) => { success: boolean; error?: string };
-  deleteTask: (taskId: string) => { success: boolean; error?: string };
-  shutdown: () => void;
+  deleteFile: (reportId: string) => Promise<{ success: boolean; error?: string }>;
+  deleteTask: (taskId: string) => Promise<{ success: boolean; error?: string }>;
+  shutdown: () => Promise<void>;
 }
 
 const defaultConfig: TaskManagerConfig = {
@@ -221,44 +230,40 @@ function normalizeError(err: unknown): TaskError {
 /** 创建任务管理器 */
 export function createTaskManager(config: Partial<TaskManagerConfig> = {}): TaskManager {
   const finalConfig = { ...defaultConfig, ...config };
-  const tasks = loadTasks(); // 从文件加载已有任务
+  const tasks = new Map<string, Task>();
   const queue: string[] = [];
   let processingCount = 0;
   let cleanupTimer: ReturnType<typeof setInterval> | undefined;
-
-  /** 持久化当前任务 */
-  function persist(): void {
-    saveTasks(tasks);
-  }
+  let initialized = false;
 
   /** 清理过期任务 */
-  function cleanup(): void {
+  async function cleanup(): Promise<void> {
     const now = Date.now();
     let cleaned = 0;
     for (const [id, task] of tasks) {
       const taskAge = now - task.createdAt.getTime();
       if (taskAge > finalConfig.taskRetentionMs && (task.status === 'completed' || task.status === 'failed')) {
+        await deleteTaskFromDb(id);
         tasks.delete(id);
         cleaned++;
       }
     }
     if (cleaned > 0) {
       console.log(`🧹 清理了 ${cleaned} 个过期任务`);
-      persist(); // 清理后持久化
     }
   }
 
   /** 启动定期清理 */
   function startCleanup(): void {
-    cleanupTimer = setInterval(cleanup, finalConfig.cleanupIntervalMs);
+    cleanupTimer = setInterval(() => cleanup().catch(console.error), finalConfig.cleanupIntervalMs);
   }
 
   /** 处理单个任务 */
   async function processTask(task: Task): Promise<void> {
     task.status = 'processing';
     task.startedAt = new Date();
-    writeTaskLog(task, 'started');
-    persist(); // 状态变化时持久化
+    await writeTaskLog(task, 'started');
+    await saveTask(task);
     console.log(`⚙️ 开始处理任务: ${task.id}`);
 
     try {
@@ -274,15 +279,15 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}): Task
       task.contentType = result.contentType;
       task.status = 'completed';
       task.completedAt = new Date();
-      writeTaskLog(task, 'completed');
-      persist(); // 状态变化时持久化
+      await writeTaskLog(task, 'completed');
+      await saveTask(task);
       console.log(`✅ 任务完成: ${task.id} (${task.completedAt.getTime() - task.startedAt!.getTime()}ms)`);
     } catch (err) {
       task.status = 'failed';
       task.completedAt = new Date();
       task.error = normalizeError(err);
-      writeTaskLog(task, 'failed');
-      persist(); // 状态变化时持久化
+      await writeTaskLog(task, 'failed');
+      await saveTask(task);
       console.error(`❌ 任务失败: ${task.id}`, task.error);
     }
   }
@@ -305,7 +310,6 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}): Task
 
   /** 检查报告文件是否存在 */
   function isFileReady(task: Task): boolean {
-    // 优先使用持久化的 filePath，兼容旧数据动态计算
     const filePath = task.filePath || getFilePath(task.reportId, task.format);
     return existsSync(filePath);
   }
@@ -330,12 +334,22 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}): Task
     return response;
   }
 
-  // 启动清理定时器
-  startCleanup();
-
   return {
+    /** 初始化任务管理器 */
+    async init(): Promise<void> {
+      if (initialized) return;
+
+      const loadedTasks = await loadTasks();
+      for (const [id, task] of loadedTasks) {
+        tasks.set(id, task);
+      }
+
+      startCleanup();
+      initialized = true;
+      console.log('✅ 任务管理器已初始化');
+    },
     /** 创建任务 */
-    create(request: CreateTaskRequest): Task {
+    async create(request: CreateTaskRequest): Promise<Task> {
       const template = templateManager.get(request.templateId);
       if (!template) {
         throw new Error(`模板 "${request.templateId}" 不存在`);
@@ -348,7 +362,7 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}): Task
       }
 
       const taskId = randomUUID();
-      const reportId = randomUUID(); // 独立的报告 ID，以后可改为业务格式
+      const reportId = randomUUID();
       const task: Task = {
         id: taskId,
         reportId,
@@ -362,8 +376,8 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}): Task
 
       tasks.set(taskId, task);
       queue.push(taskId);
-      writeTaskLog(task, 'created');
-      persist(); // 创建时持久化
+      await writeTaskLog(task, 'created');
+      await saveTask(task);
       console.log(`📝 创建任务: ${taskId} (${request.templateId}/${request.format})`);
       processQueue();
       return task;
@@ -445,13 +459,12 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}): Task
     },
 
     /** 删除文件（通过报告ID） */
-    deleteFile(reportId: string): { success: boolean; error?: string } {
+    async deleteFile(reportId: string): Promise<{ success: boolean; error?: string }> {
       const task = this.getByReportId(reportId);
       if (!task) {
         return { success: false, error: '文件不存在' };
       }
 
-      // 如果任务正在处理中，不允许删除
       if (task.status === 'processing') {
         return { success: false, error: '任务正在处理中，无法删除' };
       }
@@ -463,36 +476,36 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}): Task
 
       unlinkSync(filePath);
       task.filePath = undefined;
-      persist();
+      await saveTask(task);
       console.log(`🗑️ 已删除文件: ${filePath}`);
 
       return { success: true };
     },
 
     /** 删除任务记录（通过任务ID） */
-    deleteTask(taskId: string): { success: boolean; error?: string } {
+    async deleteTask(taskId: string): Promise<{ success: boolean; error?: string }> {
       const task = tasks.get(taskId);
       if (!task) {
         return { success: false, error: '任务不存在' };
       }
 
-      // 如果任务正在处理中，不允许删除
       if (task.status === 'processing') {
         return { success: false, error: '任务正在处理中，无法删除' };
       }
 
+      await deleteTaskFromDb(taskId);
       tasks.delete(taskId);
-      persist();
       console.log(`🗑️ 已删除任务: ${taskId}`);
 
       return { success: true };
     },
 
     /** 关闭任务管理器 */
-    shutdown(): void {
+    async shutdown(): Promise<void> {
       if (cleanupTimer) {
         clearInterval(cleanupTimer);
       }
+      await database.close();
       console.log('🛑 任务管理器已关闭');
     },
   };
