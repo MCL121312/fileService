@@ -39,6 +39,12 @@ tasks.get('/getAllTasks', (c) => {
           ? `/files/${t.reportId}.${t.format === 'word' ? 'docx' : 'pdf'}`
           : null,
       },
+      templateId: t.templateId, 
+      format: t.format,
+      createdAt: t.createdAt,
+      startedAt: t.startedAt,
+      completedAt: t.completedAt,
+      error: t.error,
     })),
   });
 });
@@ -71,6 +77,18 @@ tasks.get('/getTask/:taskId', (c) => {
       error: task.error,
     },
   });
+});
+
+/** DELETE /deleteTask/:taskId - 删除任务记录 */
+tasks.delete('/deleteTask/:taskId', (c) => {
+  const taskId = c.req.param('taskId');
+  const result = taskManager.deleteTask(taskId);
+
+  if (!result.success) {
+    return c.json({ error: result.error }, 404);
+  }
+
+  return c.json({ message: '任务删除成功' });
 });
 
 export default tasks;

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { Task, TaskStatus, TaskResponse, CreateTaskRequest, TaskError, OutputFormat } from '../types/task.ts';
 import { reportGenerator } from './reportGenerator.ts';
@@ -199,6 +199,8 @@ export interface TaskManager {
     failed: number;
   };
   list: (status?: TaskStatus) => TaskResponse[];
+  deleteFile: (reportId: string) => { success: boolean; error?: string };
+  deleteTask: (taskId: string) => { success: boolean; error?: string };
   shutdown: () => void;
 }
 
@@ -334,10 +336,14 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}): Task
   return {
     /** 创建任务 */
     create(request: CreateTaskRequest): Task {
-      if (!templateManager.has(request.templateId)) {
+      const template = templateManager.get(request.templateId);
+      if (!template) {
         throw new Error(`模板 "${request.templateId}" 不存在`);
       }
-      if (request.format === 'word' && !templateManager.supportsWord(request.templateId)) {
+      if (request.format === 'pdf' && !template.pdfGenerator) {
+        throw new Error(`模板 "${request.templateId}" 不支持 PDF 格式`);
+      }
+      if (request.format === 'word' && !template.wordGenerator) {
         throw new Error(`模板 "${request.templateId}" 不支持 Word 格式`);
       }
 
@@ -436,6 +442,50 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}): Task
         }
       }
       return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    },
+
+    /** 删除文件（通过报告ID） */
+    deleteFile(reportId: string): { success: boolean; error?: string } {
+      const task = this.getByReportId(reportId);
+      if (!task) {
+        return { success: false, error: '文件不存在' };
+      }
+
+      // 如果任务正在处理中，不允许删除
+      if (task.status === 'processing') {
+        return { success: false, error: '任务正在处理中，无法删除' };
+      }
+
+      const filePath = task.filePath || getFilePath(task.reportId, task.format);
+      if (!existsSync(filePath)) {
+        return { success: false, error: '文件不存在' };
+      }
+
+      unlinkSync(filePath);
+      task.filePath = undefined;
+      persist();
+      console.log(`🗑️ 已删除文件: ${filePath}`);
+
+      return { success: true };
+    },
+
+    /** 删除任务记录（通过任务ID） */
+    deleteTask(taskId: string): { success: boolean; error?: string } {
+      const task = tasks.get(taskId);
+      if (!task) {
+        return { success: false, error: '任务不存在' };
+      }
+
+      // 如果任务正在处理中，不允许删除
+      if (task.status === 'processing') {
+        return { success: false, error: '任务正在处理中，无法删除' };
+      }
+
+      tasks.delete(taskId);
+      persist();
+      console.log(`🗑️ 已删除任务: ${taskId}`);
+
+      return { success: true };
     },
 
     /** 关闭任务管理器 */

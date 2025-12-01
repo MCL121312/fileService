@@ -64,22 +64,14 @@
   <div class="exam-list">
     <h2>体检项目</h2>
     <div class="exam-grid">
-      {% for item in examItems %}
-      <div class="exam-item {{ 'completed' if item.completed else '' }}">
-        <div class="checkbox"></div>
-        <span class="name">{{ item.name }}</span>
-        <span class="location">{{ item.location }}</span>
-      </div>
-      {% endfor %}
+      {{examItemsHtml}}
     </div>
   </div>
 
   <div class="notes">
     <h3>温馨提示</h3>
     <ul>
-      {% for note in notes %}
-      <li>{{ note }}</li>
-      {% endfor %}
+      {{notesHtml}}
     </ul>
   </div>
 

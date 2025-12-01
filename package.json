@@ -14,13 +14,13 @@
   "dependencies": {
     "@hono/node-server": "^1.19.6",
     "@scalar/hono-api-reference": "^0.9.25",
-    "@types/nunjucks": "^3.2.6",
     "docx": "^9.5.1",
+    "docx-templates": "^4.14.1",
     "generic-pool": "^3.9.0",
     "hono": "^4.10.6",
-    "nunjucks": "^3.2.4",
     "puppeteer": "^24.31.0",
     "typescript": "^5.9.3",
+    "vue": "^3.5.25",
     "zod": "^4.1.13"
   },
   "devDependencies": {

@@ -254,10 +254,17 @@ body {
 }
 
 .task-time {
-  text-align: right;
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
   font-size: 12px;
   color: var(--gray-500);
-  white-space: nowrap;
+}
+
+.task-error {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--danger);
 }
 
 .task-actions {

@@ -43,5 +43,25 @@ files.get('/:filename', (c) => {
   });
 });
 
+/** DELETE /:filename - 删除文件资源 */
+files.delete('/:filename', (c) => {
+  const filename = c.req.param('filename');
+
+  // 解析文件名: {reportId}.{ext}
+  const match = filename.match(/^([a-f0-9-]+)\.(pdf|docx)$/i);
+  if (!match) {
+    return c.json({ error: '无效的文件名格式' }, 400);
+  }
+
+  const [, reportId] = match;
+  const result = taskManager.deleteFile(reportId);
+
+  if (!result.success) {
+    return c.json({ error: result.error }, 404);
+  }
+
+  return c.json({ message: '文件删除成功' });
+});
+
 export default files;
 

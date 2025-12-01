@@ -11,11 +11,11 @@ export interface TemplateMetadata {
 /** 模板定义 */
 export interface TemplateDefinition<T = unknown> {
   metadata: TemplateMetadata;
-  /** HTML 模板文件名 */
-  htmlTemplate: string;
   /** 数据验证 Schema */
   schema: z.ZodSchema<T>;
-  /** Word 文档生成器 (可选) */
+  /** PDF 生成器 */
+  pdfGenerator?: (data: T) => Promise<Buffer>;
+  /** Word 文档生成器 */
   wordGenerator?: (data: T) => Promise<Buffer>;
 }
 

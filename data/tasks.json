@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "id": "22e46043-791e-46ad-995f-90498946a828",
+    "reportId": "03e2ad81-1dea-4449-8925-d0f3b5774cd1",
+    "templateId": "health-report",
+    "format": "pdf",
+    "status": "completed",
+    "filename": "health-report_20251201_031956_03e2ad81.pdf",
+    "filePath": "data/files/03e2ad81-1dea-4449-8925-d0f3b5774cd1.pdf",
+    "createdAt": "2025-12-01T03:19:56.761Z",
+    "startedAt": "2025-12-01T03:19:56.764Z",
+    "completedAt": "2025-12-01T03:20:00.313Z"
+  },
+  {
+    "id": "5bb4f5fc-bbd7-4993-87a4-cad94187f8ec",
+    "reportId": "88031854-2d1e-421f-b95c-444824f8f0d7",
+    "templateId": "health-report",
+    "format": "word",
+    "status": "completed",
+    "filename": "health-report_20251201_034142_88031854.docx",
+    "filePath": "data/files/88031854-2d1e-421f-b95c-444824f8f0d7.docx",
+    "createdAt": "2025-12-01T03:41:42.135Z",
+    "startedAt": "2025-12-01T03:41:42.142Z",
+    "completedAt": "2025-12-01T03:41:42.282Z"
+  }
+]

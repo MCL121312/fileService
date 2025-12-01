@@ -78,7 +78,9 @@ app.get('/', (c) => {
       'GET /api/reports/getReportTask/:reportId': '通过报告ID获取任务详情',
       'GET /api/tasks/getAllTasks': '获取任务列表',
       'GET /api/tasks/getTask/:taskId': '获取单个任务',
+      'DELETE /api/tasks/deleteTask/:taskId': '删除任务记录',
       'GET /files/:filename': '直接访问文件资源',
+      'DELETE /files/:filename': '删除文件',
     },
   });
 });

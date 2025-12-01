@@ -82,6 +82,20 @@ export const openApiSpec = {
         },
       },
     },
+    '/api/tasks/deleteTask/{taskId}': {
+      delete: {
+        tags: ['任务管理'],
+        summary: '删除任务记录',
+        description: '根据任务 ID 删除任务记录（不会删除已生成的文件）',
+        parameters: [
+          { name: 'taskId', in: 'path', required: true, description: '任务 ID', schema: { type: 'string', format: 'uuid' } },
+        ],
+        responses: {
+          '200': { description: '删除成功', content: { 'application/json': { schema: { type: 'object', properties: { message: { type: 'string' } } } } } },
+          '404': { description: '任务不存在', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
     '/files/{filename}': {
       get: {
         tags: ['文件资源'],
@@ -93,6 +107,19 @@ export const openApiSpec = {
         responses: {
           '200': { description: '文件内容', content: { 'application/pdf': {}, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {} } },
           '202': { description: '文件尚未生成完成', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '400': { description: '无效的文件名格式', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '404': { description: '文件不存在', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+      delete: {
+        tags: ['文件资源'],
+        summary: '删除文件',
+        description: '删除指定的报告文件及其关联的任务记录，格式为 {reportId}.{pdf|docx}',
+        parameters: [
+          { name: 'filename', in: 'path', required: true, description: '文件名 (如 xxx.pdf 或 xxx.docx)', schema: { type: 'string', pattern: '^[a-f0-9-]+\\.(pdf|docx)$' } },
+        ],
+        responses: {
+          '200': { description: '删除成功', content: { 'application/json': { schema: { type: 'object', properties: { message: { type: 'string' } } } } } },
           '400': { description: '无效的文件名格式', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           '404': { description: '文件不存在', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
         },
@@ -179,8 +206,14 @@ export const openApiSpec = {
           taskId: { type: 'string', format: 'uuid', description: '任务 ID' },
           status: { $ref: '#/components/schemas/ReportStatus' },
           content: { $ref: '#/components/schemas/ContentObject' },
+          templateId: { type: 'string', description: '模板 ID' },
+          format: { type: 'string', enum: ['pdf', 'word'], description: '输出格式' },
+          createdAt: { type: 'string', format: 'date-time', description: '创建时间' },
+          startedAt: { type: 'string', format: 'date-time', description: '开始处理时间' },
+          completedAt: { type: 'string', format: 'date-time', description: '完成时间' },
+          error: { $ref: '#/components/schemas/TaskError' },
         },
-        required: ['taskId', 'status', 'content'],
+        required: ['taskId', 'status', 'content', 'templateId', 'format', 'createdAt'],
       },
       TaskDetailResponse: {
         type: 'object',

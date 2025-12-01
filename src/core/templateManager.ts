@@ -1,5 +1,3 @@
-import nunjucks from 'nunjucks';
-import path from 'path';
 import type { TemplateDefinition, TemplateRegistry, TemplateMetadata } from '../types/template.ts';
 
 /** 模板管理器接口 */
@@ -14,22 +12,11 @@ export interface TemplateManager {
   list(): TemplateMetadata[];
   /** 验证数据 */
   validate(templateId: string, data: unknown): { success: true; data: unknown } | { success: false; error: unknown };
-  /** 渲染 HTML */
-  render(templateId: string, data: unknown): string;
-  /** 检查模板是否支持 Word 格式 */
-  supportsWord(templateId: string): boolean;
-  /** 生成 Word 文档 */
-  generateWord(templateId: string, data: unknown): Promise<Buffer>;
 }
 
 /** 创建模板管理器 */
 export function createTemplateManager(): TemplateManager {
   const registry: TemplateRegistry = new Map();
-  const templatesDir = path.join(import.meta.dirname, '../templates');
-  const nunjucksEnv = nunjucks.configure(templatesDir, {
-    autoescape: true,
-    noCache: process.env.NODE_ENV !== 'production',
-  });
 
   /** 注册模板 */
   function register<T>(template: TemplateDefinition<T>): void {
@@ -70,44 +57,12 @@ export function createTemplateManager(): TemplateManager {
     return { success: true, data: result.data };
   }
 
-  /** 渲染 HTML */
-  function render(templateId: string, data: unknown): string {
-    const template = get(templateId);
-    if (!template) {
-      throw new Error(`模板 "${templateId}" 不存在`);
-    }
-
-    return nunjucksEnv.render(template.htmlTemplate, {
-      ...data as object,
-      generatedAt: new Date().toLocaleString('zh-CN'),
-    });
-  }
-
-  /** 检查模板是否支持 Word 格式 */
-  function supportsWord(templateId: string): boolean {
-    const template = get(templateId);
-    return !!template?.wordGenerator;
-  }
-
-  /** 生成 Word 文档 */
-  async function generateWord(templateId: string, data: unknown): Promise<Buffer> {
-    const template = get(templateId);
-    if (!template?.wordGenerator) {
-      throw new Error(`模板 "${templateId}" 不支持 Word 格式`);
-    }
-
-    return template.wordGenerator(data);
-  }
-
   return {
     register,
     get,
     has,
     list,
     validate,
-    render,
-    supportsWord,
-    generateWord,
   };
 }
 

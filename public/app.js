@@ -84,8 +84,14 @@ function renderTasks(tasks) {
       <div class="task-info">
         <div class="task-id">任务: ${task.taskId.slice(0, 8)}</div>
         <div class="task-meta">
-          <span>报告: ${task.content?.reportId?.slice(0, 8) || '-'}</span>
+          <span>模板: ${task.templateId || '-'}</span>
+          <span>格式: ${task.format?.toUpperCase() || '-'}</span>
         </div>
+        <div class="task-time">
+          <span>创建: ${task.createdAt ? formatTime(task.createdAt) : '-'}</span>
+          ${task.completedAt ? `<span>耗时: ${getDuration(task.startedAt, task.completedAt)}</span>` : ''}
+        </div>
+        ${task.error ? `<div class="task-error">❌ ${task.error.message}</div>` : ''}
       </div>
       <div class="task-actions">
         ${task.content?.file ? `
