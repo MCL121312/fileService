@@ -1,8 +1,8 @@
 /** 任务状态 */
-export type TaskStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type TaskStatus = "pending" | "processing" | "completed" | "failed";
 
 /** 输出格式 */
-export type OutputFormat = 'pdf' | 'word';
+export type OutputFormat = "pdf";
 
 /** 任务信息 */
 export interface Task {
@@ -63,4 +63,3 @@ export interface TaskResponse {
   /** 结果是否可用 */
   resultReady: boolean;
 }
-

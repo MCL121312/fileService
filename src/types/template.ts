@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type { z } from "zod";
 
 /** 模板元信息 */
 export interface TemplateMetadata {
@@ -15,8 +15,6 @@ export interface TemplateDefinition<T = unknown> {
   schema: z.ZodSchema<T>;
   /** PDF 生成器 */
   pdfGenerator?: (data: T) => Promise<Buffer>;
-  /** Word 文档生成器 */
-  wordGenerator?: (data: T) => Promise<Buffer>;
 }
 
 /** 模板注册表 */
@@ -26,7 +24,7 @@ export type TemplateRegistry = Map<string, TemplateDefinition>;
 export interface GenerateRequest {
   templateId: string;
   data: unknown;
-  format: 'pdf' | 'word';
+  format: "pdf";
 }
 
 /** 生成结果 */
@@ -35,4 +33,3 @@ export interface GenerateResult {
   filename: string;
   contentType: string;
 }
-

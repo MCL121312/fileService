@@ -1,7 +1,15 @@
 import { z } from 'zod';
+import type { TemplateMeta } from '../../core/templateLoader.ts';
 
-/** 体检报告数据 Schema */
-export const HealthReportSchema = z.object({
+/** 模板元信息 */
+export const meta: TemplateMeta = {
+  id: 'health-report',
+  name: '健康体检报告',
+  description: '标准健康体检报告，包含血常规、肝功能、血脂等检查项目',
+};
+
+/** 数据验证 Schema */
+export const schema = z.object({
   /** 患者基本信息 */
   patientInfo: z.object({
     /** 姓名 */
@@ -49,5 +57,5 @@ export const HealthReportSchema = z.object({
 });
 
 /** 体检报告数据类型 */
-export type HealthReportData = z.infer<typeof HealthReportSchema>;
+export type HealthReportData = z.infer<typeof schema>;
 

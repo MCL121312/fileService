@@ -1,7 +1,7 @@
 {
   "name": "fileService",
   "version": "1.0.0",
-  "description": "体检报告生成服务 - JSON to PDF/Word",
+  "description": "体检报告生成服务 - JSON to PDF",
   "type": "module",
   "main": "app.ts",
   "scripts": {
@@ -14,8 +14,6 @@
   "dependencies": {
     "@hono/node-server": "^1.19.6",
     "@scalar/hono-api-reference": "^0.9.25",
-    "docx": "^9.5.1",
-    "docx-templates": "^4.14.1",
     "generic-pool": "^3.9.0",
     "hono": "^4.10.6",
     "puppeteer": "^24.31.0",
