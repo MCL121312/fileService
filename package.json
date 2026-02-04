@@ -5,7 +5,7 @@
   "type": "module",
   "main": "app.ts",
   "scripts": {
-    "dev": "node --watch --experimental-strip-types --experimental-transform-types app.ts"
+    "dev": "PORT=4000 node --watch --experimental-strip-types --experimental-transform-types app.ts"
   },
   "keywords": [],
   "author": "",
