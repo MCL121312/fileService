@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { apiReference } from "@scalar/hono-api-reference";
+import { Scalar } from "@scalar/hono-api-reference";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { serveStatic } from "@hono/node-server/serve-static";
@@ -12,6 +12,46 @@ import tasksRoutes from "./routes/tasks.ts";
 import filesRoutes from "./routes/files.ts";
 import { openApiSpec } from "./openapi/spec.ts";
 
+const SCALAR_SCRIPT_CDN_URLS = [
+  "https://unpkg.com/@scalar/api-reference/dist/browser/standalone.js",
+  "https://cdn.jsdelivr.net/npm/@scalar/api-reference/dist/browser/standalone.js"
+];
+
+let scalarScriptCache: string | null = null;
+let scalarScriptPromise: Promise<string> | null = null;
+
+async function loadScalarScript(): Promise<string> {
+  if (scalarScriptCache) return scalarScriptCache;
+  if (scalarScriptPromise) return scalarScriptPromise;
+
+  scalarScriptPromise = (async () => {
+    for (const url of SCALAR_SCRIPT_CDN_URLS) {
+      try {
+        const response = await fetch(url, {
+          signal: AbortSignal.timeout(3000)
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const script = await response.text();
+        scalarScriptCache = script;
+        return script;
+      } catch (error) {
+        console.warn(`⚠️ 加载 Scalar 脚本失败: ${url}`, error);
+      }
+    }
+
+    throw new Error("无法加载 Scalar API Reference 脚本");
+  })();
+
+  try {
+    return await scalarScriptPromise;
+  } finally {
+    scalarScriptPromise = null;
+  }
+}
+
 // 初始化浏览器池
 await browserPool.init();
 
@@ -21,7 +61,7 @@ await loadTemplates(templatesDir);
 
 // 服务配置
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || "0.0.0.0";
+// const HOST = process.env.HOST || "0.0.0.0";
 
 /** 打印启动信息 */
 export function printStartupInfo() {
@@ -107,14 +147,29 @@ app.route("/files", filesRoutes);
 // OpenAPI 规范文档
 app.get("/openapi.json", c => c.json(openApiSpec));
 
+// Scalar 脚本代理（避免浏览器直接依赖外部 CDN）
+app.get("/docs-assets/scalar.js", async c => {
+  try {
+    const script = await loadScalarScript();
+    return c.body(script, 200, {
+      "Content-Type": "application/javascript; charset=UTF-8",
+      "Cache-Control": "public, max-age=3600"
+    });
+  } catch (error) {
+    console.error("❌ 加载 Scalar 脚本失败", error);
+    return c.text("// Failed to load Scalar API Reference", 502, {
+      "Content-Type": "application/javascript; charset=UTF-8"
+    });
+  }
+});
+
 // Scalar API 文档 UI
 app.get(
   "/docs",
-  apiReference({
+  Scalar({
     pageTitle: "FileService API 文档",
-    spec: {
-      url: "/openapi.json"
-    },
+    url: "/openapi.json",
+    cdn: "/docs-assets/scalar.js",
     theme: "bluePlanet"
   })
 );

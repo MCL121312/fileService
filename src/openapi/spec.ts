@@ -19,7 +19,7 @@ export function generateOpenApiSpec() {
   const networkIP = getNetworkIP();
 
   return {
-    openapi: "3.1.0",
+      openapi: "3.0.3",
     info: {
       title: "FileService API",
       version: "3.0.0",
@@ -328,6 +328,18 @@ export function generateOpenApiSpec() {
             details: { description: "错误详情" }
           },
           required: ["error"]
+        },
+        TaskError: {
+          type: "object",
+          properties: {
+            code: { type: "string", description: "错误代码" },
+            message: { type: "string", description: "错误消息" },
+            details: {
+              nullable: true,
+              description: "错误详情"
+            }
+          },
+          required: ["code", "message"]
         },
         ReportStatus: {
           type: "string",

@@ -93,6 +93,16 @@ function findChromePath(): string | null {
     }
   }
 
+  // 兜底使用 Puppeteer 自带浏览器
+  try {
+    const bundledChromePath = puppeteer.executablePath();
+    if (bundledChromePath && fs.existsSync(bundledChromePath)) {
+      return bundledChromePath;
+    }
+  } catch {
+    // 忽略错误
+  }
+
   return null;
 }
 
