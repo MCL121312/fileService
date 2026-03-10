@@ -9,7 +9,7 @@ import { loadTemplates, listTemplates } from "./core/templateLoader.ts";
 import { browserPool } from "./core/browserPool.ts";
 import reportsRoutes from "./routes/reports.ts";
 import tasksRoutes from "./routes/tasks.ts";
-import filesRoutes from "./routes/files.ts";
+import filesRoutes, { fileApis } from "./routes/files.ts";
 import { openApiSpec } from "./openapi/spec.ts";
 
 const SCALAR_SCRIPT_CDN_URLS = [
@@ -130,6 +130,7 @@ app.get("/", c => {
       "GET /api/reports/getReportTask/:reportId": "通过报告ID获取任务详情",
       "GET /api/tasks/getAllTasks": "获取任务列表",
       "GET /api/tasks/getTask/:taskId": "获取单个任务",
+      "GET /api/files/getAllFiles": "获取已生成文件列表",
       "DELETE /api/tasks/deleteTask/:taskId": "删除任务记录",
       "GET /files/:filename": "直接访问文件资源",
       "DELETE /files/:filename": "删除文件"
@@ -140,6 +141,7 @@ app.get("/", c => {
 // API 路由
 app.route("/api/reports", reportsRoutes);
 app.route("/api/tasks", tasksRoutes);
+app.route("/api/files", fileApis);
 
 // 文件资源路由
 app.route("/files", filesRoutes);

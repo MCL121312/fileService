@@ -2,6 +2,32 @@ import { Hono } from "hono";
 import { taskManager } from "../core/taskManager.ts";
 
 const files = new Hono();
+export const fileApis = new Hono();
+
+/** 生成文件的 HTTP 访问地址 */
+function getFileHttpUrl(requestUrl: string, reportId: string): string {
+  const url = new URL(requestUrl);
+  return new URL(`/files/${reportId}.pdf`, url.origin).toString();
+}
+
+/** GET /getAllFiles - 获取已生成文件列表 */
+fileApis.get("/getAllFiles", c => {
+  const items = taskManager
+    .list("completed")
+    .filter(task => task.resultReady)
+    .map(task => ({
+      reportId: task.reportId,
+      taskId: task.id,
+      templateId: task.templateId,
+      filename: task.filename,
+      file: getFileHttpUrl(c.req.url, task.reportId),
+      status: task.status,
+      createdAt: task.createdAt,
+      completedAt: task.completedAt || null
+    }));
+
+  return c.json({ items, total: items.length });
+});
 
 /** GET /:filename - 直接访问文件资源 */
 files.get("/:filename", c => {

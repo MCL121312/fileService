@@ -19,7 +19,7 @@ export function generateOpenApiSpec() {
   const networkIP = getNetworkIP();
 
   return {
-      openapi: "3.0.3",
+    openapi: "3.0.3",
     info: {
       title: "FileService API",
       version: "3.0.0",
@@ -48,11 +48,11 @@ export function generateOpenApiSpec() {
               "application/json": {
                 schema: { $ref: "#/components/schemas/GenerateReportRequest" },
                 examples: {
+                  test: {
+                    $ref: "#/components/examples/GenerateTestTemplateExample"
+                  },
                   "health-report": {
                     $ref: "#/components/examples/GenerateHealthReportExample"
-                  },
-                  "guide-sheet": {
-                    $ref: "#/components/examples/GenerateGuideSheetExample"
                   }
                 }
               }
@@ -225,6 +225,23 @@ export function generateOpenApiSpec() {
           }
         }
       },
+      "/api/files/getAllFiles": {
+        get: {
+          tags: ["文件资源"],
+          summary: "获取已生成文件列表",
+          description: "返回所有已生成完成且可通过 HTTP 地址访问的报告文件列表",
+          responses: {
+            "200": {
+              description: "文件列表",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/FileListResponse" }
+                }
+              }
+            }
+          }
+        }
+      },
       "/files/{filename}": {
         get: {
           tags: ["文件资源"],
@@ -352,7 +369,7 @@ export function generateOpenApiSpec() {
           properties: {
             templateId: {
               type: "string",
-              description: "模板 ID (health-report, guide-sheet)"
+              description: "模板 ID (test, health-report)"
             },
             format: {
               $ref: "#/components/schemas/OutputFormat",
@@ -360,8 +377,8 @@ export function generateOpenApiSpec() {
             },
             data: {
               oneOf: [
-                { $ref: "#/components/schemas/HealthReportData" },
-                { $ref: "#/components/schemas/GuideSheetData" }
+                { $ref: "#/components/schemas/TestTemplateData" },
+                { $ref: "#/components/schemas/HealthReportData" }
               ]
             }
           },
@@ -426,6 +443,54 @@ export function generateOpenApiSpec() {
             detail: { $ref: "#/components/schemas/TaskDetail" }
           },
           required: ["taskId", "status", "content", "detail"]
+        },
+        FileListItem: {
+          type: "object",
+          description: "已生成的文件项",
+          properties: {
+            reportId: {
+              type: "string",
+              format: "uuid",
+              description: "报告 ID"
+            },
+            taskId: { type: "string", format: "uuid", description: "任务 ID" },
+            templateId: { type: "string", description: "模板 ID" },
+            filename: { type: "string", description: "输出文件名" },
+            file: {
+              type: "string",
+              format: "uri",
+              description: "可通过 HTTP 访问的文件地址"
+            },
+            status: { $ref: "#/components/schemas/ReportStatus" },
+            createdAt: { type: "string", format: "date-time" },
+            completedAt: {
+              type: "string",
+              format: "date-time",
+              nullable: true
+            }
+          },
+          required: [
+            "reportId",
+            "taskId",
+            "templateId",
+            "filename",
+            "file",
+            "status",
+            "createdAt",
+            "completedAt"
+          ]
+        },
+        FileListResponse: {
+          type: "object",
+          description: "文件列表响应",
+          properties: {
+            items: {
+              type: "array",
+              items: { $ref: "#/components/schemas/FileListItem" }
+            },
+            total: { type: "integer", description: "文件总数" }
+          },
+          required: ["items", "total"]
         },
         TasksResponse: {
           type: "object",
@@ -544,31 +609,30 @@ export function generateOpenApiSpec() {
           },
           required: ["patientInfo", "examItems", "summary"]
         },
-        GuideSheetData: {
+        TestTemplateData: {
           type: "object",
-          description: "体检指引单数据",
+          description: "测试报告数据",
           properties: {
-            patientInfo: { $ref: "#/components/schemas/PatientInfo" },
-            examDate: { type: "string" },
-            barcode: { type: "string" },
-            hospitalName: { type: "string", default: "健康体检中心" },
-            examItems: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  name: { type: "string" },
-                  location: { type: "string" },
-                  completed: { type: "boolean", default: false }
-                }
-              }
-            },
-            notes: { type: "array", items: { type: "string" } }
+            hospitalName: {
+              type: "string",
+              minLength: 1,
+              description: "医院名称"
+            }
           },
-          required: ["patientInfo", "examDate", "barcode", "examItems"]
+          required: ["hospitalName"]
         }
       },
       examples: {
+        GenerateTestTemplateExample: {
+          summary: "生成测试报告示例",
+          value: {
+            templateId: "test",
+            format: "pdf",
+            data: {
+              hospitalName: "某市第一人民医院"
+            }
+          }
+        },
         GenerateHealthReportExample: {
           summary: "生成健康体检报告示例",
           value: {
@@ -600,24 +664,6 @@ export function generateOpenApiSpec() {
                 conclusion: "体检结果基本正常",
                 suggestions: ["建议定期复查", "保持良好作息"]
               }
-            }
-          }
-        },
-        GenerateGuideSheetExample: {
-          summary: "生成体检指引单示例",
-          value: {
-            templateId: "guide-sheet",
-            format: "pdf",
-            data: {
-              patientInfo: { name: "李四", gender: "女", age: 28 },
-              examDate: "2025-11-27",
-              barcode: "TJ20251127001",
-              hospitalName: "健康体检中心",
-              examItems: [
-                { name: "血常规", location: "检验科 201", completed: false },
-                { name: "心电图", location: "心电图室 102", completed: false }
-              ],
-              notes: ["请空腹进行抽血检查", "请携带本指引单依次完成各项检查"]
             }
           }
         }

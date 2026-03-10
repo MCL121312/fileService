@@ -82,9 +82,9 @@ export async function renderPdf(
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const pdf = await page.pdf({
-        format: opts.pageSize,
+        ...(opts.pageSize ? { format: opts.pageSize } : {}),
         printBackground: true,
-        margin: opts.margin
+        ...(opts.margin ? { margin: opts.margin } : {})
       });
       return Buffer.from(pdf);
     } finally {

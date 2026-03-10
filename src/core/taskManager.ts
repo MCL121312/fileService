@@ -71,8 +71,8 @@ function rowToTask(row: TaskRow): Task {
     format: row.format,
     status: row.status,
     filename: row.filename,
-    filePath: row.file_path || undefined,
-    contentType: row.content_type || undefined,
+    ...(row.file_path ? { filePath: row.file_path } : {}),
+    ...(row.content_type ? { contentType: row.content_type } : {}),
     createdAt: new Date(row.created_at),
     data: {}
   };
@@ -319,8 +319,7 @@ export function createTaskManager(
       }
       const result = await reportGenerator.generate(
         task.templateId,
-        validation.data,
-        task.format
+        validation.data
       );
       // 保存文件到磁盘并记录路径
       const filePath = getFilePath(task.reportId, task.format);

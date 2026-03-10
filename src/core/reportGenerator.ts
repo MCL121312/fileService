@@ -6,11 +6,7 @@ export interface ReportGenerator {
   /** 生成 PDF */
   generatePdf(templateId: string, data: unknown): Promise<GenerateResult>;
   /** 通用生成方法 */
-  generate(
-    templateId: string,
-    data: unknown,
-    format: "pdf"
-  ): Promise<GenerateResult>;
+  generate(templateId: string, data: unknown): Promise<GenerateResult>;
 }
 
 /** 创建报告生成器 */
@@ -37,8 +33,7 @@ export function createReportGenerator(): ReportGenerator {
   /** 通用生成方法 */
   async function generate(
     templateId: string,
-    data: unknown,
-    format: "pdf"
+    data: unknown
   ): Promise<GenerateResult> {
     // 验证数据
     const validation = validateData(templateId, data);

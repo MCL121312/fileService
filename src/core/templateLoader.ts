@@ -1,7 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import type { z } from 'zod';
-import { renderPdf, type PdfRenderOptions } from './pdfRenderer.ts';
+import fs from "fs";
+import path from "path";
+import type { z } from "zod";
+import { renderPdf, type PdfRenderOptions } from "./pdfRenderer.ts";
 
 /** 模板元信息 */
 export interface TemplateMeta {
@@ -21,7 +21,7 @@ export interface TemplateSchemaModule {
 export interface LoadedTemplate {
   meta: TemplateMeta;
   schema: z.ZodSchema;
-  format: 'pdf';
+  format: "pdf";
   templatePath: string;
   pdfOptions?: PdfRenderOptions;
   generate: (data: unknown) => Promise<Buffer>;
@@ -32,10 +32,11 @@ const registry = new Map<string, LoadedTemplate>();
 
 /** 扫描并加载所有模板 */
 export async function loadTemplates(templatesDir: string): Promise<void> {
-  console.log('📋 正在扫描模板目录...');
-  
-  const dirs = fs.readdirSync(templatesDir, { withFileTypes: true })
-    .filter(d => d.isDirectory() && !d.name.startsWith('.'));
+  console.log("📋 正在扫描模板目录...");
+
+  const dirs = fs
+    .readdirSync(templatesDir, { withFileTypes: true })
+    .filter(d => d.isDirectory() && !d.name.startsWith("."));
 
   for (const dir of dirs) {
     const dirPath = path.join(templatesDir, dir.name);
@@ -48,16 +49,16 @@ export async function loadTemplates(templatesDir: string): Promise<void> {
 /** 从目录加载模板 */
 async function loadTemplatesFromDir(dirPath: string): Promise<void> {
   const files = fs.readdirSync(dirPath);
-  
+
   // 查找所有 *.schema.ts 文件
-  const schemaFiles = files.filter(f => f.endsWith('.schema.ts'));
-  
+  const schemaFiles = files.filter(f => f.endsWith(".schema.ts"));
+
   for (const schemaFile of schemaFiles) {
-    const format = schemaFile.replace('.schema.ts', '') as 'pdf';
-    
+    const format = schemaFile.replace(".schema.ts", "") as "pdf";
+
     // 目前只支持 pdf
-    if (format !== 'pdf') continue;
-    
+    if (format !== "pdf") continue;
+
     const templateFile = `${format}.html`;
     if (!files.includes(templateFile)) {
       console.warn(`⚠ 模板文件 ${templateFile} 不存在，跳过 ${schemaFile}`);
@@ -69,7 +70,7 @@ async function loadTemplatesFromDir(dirPath: string): Promise<void> {
 
     try {
       // 动态导入 schema 模块
-      const schemaModule = await import(schemaPath) as TemplateSchemaModule;
+      const schemaModule = (await import(schemaPath)) as TemplateSchemaModule;
       const { meta, schema, pdfOptions } = schemaModule;
 
       // 检查 ID 唯一性
@@ -88,8 +89,8 @@ async function loadTemplatesFromDir(dirPath: string): Promise<void> {
         schema,
         format,
         templatePath,
-        pdfOptions,
-        generate,
+        ...(pdfOptions ? { pdfOptions } : {}),
+        generate
       });
 
       console.log(`  ✓ ${meta.id} (${meta.name})`);
@@ -132,4 +133,3 @@ export function validateData(
 
   return { success: true, data: result.data };
 }
-

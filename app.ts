@@ -4,7 +4,7 @@ import { browserPool } from "./src/core/browserPool.ts";
 import { taskManager } from "./src/core/taskManager.ts";
 import { createServer } from "net";
 
-const port = Number(process.env.PORT) || 3000;
+const port = Number(process.env.PORT) || 4000;
 
 /** 检查端口是否被占用 */
 function isPortInUse(port: number): Promise<boolean> {
