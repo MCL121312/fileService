@@ -1,5 +1,5 @@
 {
-  "name": "fileService",
+  "name": "file-service",
   "version": "1.0.0",
   "description": "体检报告生成服务 - JSON to PDF",
   "type": "module",
@@ -13,6 +13,7 @@
   "packageManager": "pnpm@10.32.0",
   "dependencies": {
     "@hono/node-server": "^1.19.6",
+    "@scalar/api-reference": "^1.48.5",
     "@scalar/hono-api-reference": "^0.9.25",
     "generic-pool": "^3.9.0",
     "hono": "^4.10.6",
