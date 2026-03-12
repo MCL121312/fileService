@@ -1,32 +1,21 @@
-import { randomUUID } from "crypto";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  unlinkSync,
-  writeFileSync
-} from "fs";
-import { join } from "path";
+import { randomUUID } from 'crypto';
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { join } from 'path';
 import type {
   Task,
   TaskStatus,
   TaskResponse,
   CreateTaskRequest,
   TaskError,
-  OutputFormat
-} from "../types/task.ts";
-import { reportGenerator } from "./reportGenerator.ts";
-import { getTemplate, validateData } from "./templateLoader.ts";
-import { database } from "./database.ts";
-
-/** 文件扩展名映射 */
-const FORMAT_EXTENSIONS: Record<OutputFormat, string> = {
-  pdf: "pdf"
-};
+  OutputFormat,
+} from '../types/task.ts';
+import { reportGenerator } from './reportGenerator.ts';
+import { getTemplate, validateData } from './templateLoader.ts';
+import { database } from './database.ts';
 
 /** Content-Type 映射 */
 const FORMAT_CONTENT_TYPES: Record<OutputFormat, string> = {
-  pdf: "application/pdf"
+  pdf: 'application/pdf',
 };
 
 /** 根据格式获取 Content-Type */
@@ -35,8 +24,8 @@ function getContentType(format: OutputFormat): string {
 }
 
 /** 数据目录 */
-const DATA_DIR = "data";
-const FILES_DIR = join(DATA_DIR, "files");
+const DATA_DIR = 'data';
+const FILES_DIR = join(DATA_DIR, 'files');
 
 /** 确保目录存在 */
 function ensureDir(dir: string): void {
@@ -75,7 +64,7 @@ export interface TaskManagerConfig {
 const defaultConfig: TaskManagerConfig = {
   taskRetentionMs: 60 * 60 * 1000,
   cleanupIntervalMs: 5 * 60 * 1000,
-  maxConcurrent: 10
+  maxConcurrent: 10,
 };
 /** 创建任务管理器 */
 export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
@@ -94,7 +83,7 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
       const taskAge = now - task.createdAt.getTime();
       if (
         taskAge > finalConfig.taskRetentionMs &&
-        (task.status === "completed" || task.status === "failed")
+        (task.status === 'completed' || task.status === 'failed')
       ) {
         await deleteTaskFromDb(id);
         tasks.delete(id);
@@ -108,17 +97,14 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
 
   /** 启动定期清理 */
   function startCleanup(): void {
-    cleanupTimer = setInterval(
-      () => cleanup().catch(console.error),
-      finalConfig.cleanupIntervalMs
-    );
+    cleanupTimer = setInterval(() => cleanup().catch(console.error), finalConfig.cleanupIntervalMs);
   }
 
   /** 处理单个任务 */
   async function processTask(task: Task): Promise<void> {
-    task.status = "processing";
+    task.status = 'processing';
     task.startedAt = new Date();
-    await writeTaskLog(task, "started");
+    await writeTaskLog(task, 'started');
     await saveTask(task);
     console.log(`⚙️ 开始处理任务: ${task.id}`);
 
@@ -126,34 +112,29 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
       const validation = validateData(task.templateId, task.data);
       if (!validation.success) {
         throw {
-          code: "VALIDATION_ERROR",
-          message: "数据验证失败",
-          details: validation.error
+          code: 'VALIDATION_ERROR',
+          message: '数据验证失败',
+          details: validation.error,
         };
       }
-      const result = await reportGenerator.generate(
-        task.templateId,
-        validation.data
-      );
+      const result = await reportGenerator.generate(task.templateId, validation.data);
       // 保存文件到磁盘并记录路径
-      const filePath = getFilePath(task.reportId, task.format);
-      saveReportFile(task.reportId, task.format, result.buffer);
+      const filePath = getFilePath(task.reportId);
+      saveReportFile(task.reportId, result.buffer);
       task.filePath = filePath;
       task.contentType = result.contentType;
-      task.status = "completed";
+      task.status = 'completed';
       task.completedAt = new Date();
-      await writeTaskLog(task, "completed");
+      await writeTaskLog(task, 'completed');
       await saveTask(task);
       console.log(
-        `✅ 任务完成: ${task.id} (${
-          task.completedAt.getTime() - task.startedAt!.getTime()
-        }ms)`
+        `✅ 任务完成: ${task.id} (${task.completedAt.getTime() - task.startedAt!.getTime()}ms)`,
       );
     } catch (err) {
-      task.status = "failed";
+      task.status = 'failed';
       task.completedAt = new Date();
       task.error = normalizeError(err);
-      await writeTaskLog(task, "failed");
+      await writeTaskLog(task, 'failed');
       await saveTask(task);
       console.error(`❌ 任务失败: ${task.id}`, task.error);
     }
@@ -165,7 +146,7 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
       const taskId = queue.shift();
       if (!taskId) break;
       const task = tasks.get(taskId);
-      if (!task || task.status !== "pending") continue;
+      if (!task || task.status !== 'pending') continue;
 
       processingCount++;
       processTask(task).finally(() => {
@@ -177,7 +158,7 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
 
   /** 检查报告文件是否存在 */
   function isFileReady(task: Task): boolean {
-    const filePath = task.filePath || getFilePath(task.reportId, task.format);
+    const filePath = task.filePath || getFilePath(task.reportId);
     return existsSync(filePath);
   }
 
@@ -193,7 +174,7 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
       status: task.status,
       filename: task.filename,
       createdAt: task.createdAt.toISOString(),
-      resultReady: task.status === "completed" && isFileReady(task)
+      resultReady: task.status === 'completed' && isFileReady(task),
     };
     if (task.startedAt) response.startedAt = task.startedAt.toISOString();
     if (task.completedAt) response.completedAt = task.completedAt.toISOString();
@@ -212,7 +193,7 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
 
     startCleanup();
     initialized = true;
-    console.log("✅ 任务管理器已初始化");
+    console.log('✅ 任务管理器已初始化');
   }
 
   /** 创建任务 */
@@ -229,19 +210,17 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
       reportId,
       templateId: request.templateId,
       format: request.format,
-      status: "pending",
-      filename: generateFilename(request.templateId, reportId, request.format),
+      status: 'pending',
+      filename: generateFilename(request.templateId, reportId),
       createdAt: new Date(),
-      data: request.data
+      data: request.data,
     };
 
     tasks.set(taskId, task);
     queue.push(taskId);
-    await writeTaskLog(task, "created");
+    await writeTaskLog(task, 'created');
     await saveTask(task);
-    console.log(
-      `📝 创建任务: ${taskId} (${request.templateId}/${request.format})`
-    );
+    console.log(`📝 创建任务: ${taskId} (${request.templateId}/${request.format})`);
     processQueue();
     return task;
   }
@@ -261,37 +240,37 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
 
   /** 获取任务结果 (Buffer) - 从文件读取 */
   function getResult(
-    taskId: string
+    taskId: string,
   ): { buffer: Buffer; filename: string; contentType: string } | undefined {
     const task = tasks.get(taskId);
-    if (!task || task.status !== "completed") return undefined;
+    if (!task || task.status !== 'completed') return undefined;
     // 优先使用持久化的 filePath，兼容旧数据动态计算
-    const filePath = task.filePath || getFilePath(task.reportId, task.format);
+    const filePath = task.filePath || getFilePath(task.reportId);
     if (!existsSync(filePath)) return undefined;
     // 根据格式计算 contentType（兼容重启后 contentType 为空的情况）
     const contentType = task.contentType || getContentType(task.format);
     return {
       buffer: readFileSync(filePath),
       filename: task.filename,
-      contentType
+      contentType,
     };
   }
 
   /** 通过报告ID获取任务结果 - 从文件读取 */
   function getResultByReportId(
-    reportId: string
+    reportId: string,
   ): { buffer: Buffer; filename: string; contentType: string } | undefined {
     const task = getByReportId(reportId);
-    if (!task || task.status !== "completed") return undefined;
+    if (!task || task.status !== 'completed') return undefined;
     // 优先使用持久化的 filePath，兼容旧数据动态计算
-    const filePath = task.filePath || getFilePath(task.reportId, task.format);
+    const filePath = task.filePath || getFilePath(task.reportId);
     if (!existsSync(filePath)) return undefined;
     // 根据格式计算 contentType（兼容重启后 contentType 为空的情况）
     const contentType = task.contentType || getContentType(task.format);
     return {
       buffer: readFileSync(filePath),
       filename: task.filename,
-      contentType
+      contentType,
     };
   }
 
@@ -299,16 +278,16 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
   function getStatus() {
     const statusCounts = { pending: 0, completed: 0, failed: 0 };
     for (const task of tasks.values()) {
-      if (task.status === "pending") statusCounts.pending++;
-      else if (task.status === "completed") statusCounts.completed++;
-      else if (task.status === "failed") statusCounts.failed++;
+      if (task.status === 'pending') statusCounts.pending++;
+      else if (task.status === 'completed') statusCounts.completed++;
+      else if (task.status === 'failed') statusCounts.failed++;
     }
     return {
       total: tasks.size,
       queue: queue.length,
       processing: processingCount,
       maxConcurrent: finalConfig.maxConcurrent,
-      ...statusCounts
+      ...statusCounts,
     };
   }
 
@@ -320,28 +299,23 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
         result.push(getResponse(task.id)!);
       }
     }
-    return result.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   /** 删除文件（通过报告ID） */
-  async function deleteFile(
-    reportId: string
-  ): Promise<{ success: boolean; error?: string }> {
+  async function deleteFile(reportId: string): Promise<{ success: boolean; error?: string }> {
     const task = getByReportId(reportId);
     if (!task) {
-      return { success: false, error: "文件不存在" };
+      return { success: false, error: '文件不存在' };
     }
 
-    if (task.status === "processing") {
-      return { success: false, error: "任务正在处理中，无法删除" };
+    if (task.status === 'processing') {
+      return { success: false, error: '任务正在处理中，无法删除' };
     }
 
-    const filePath = task.filePath || getFilePath(task.reportId, task.format);
+    const filePath = task.filePath || getFilePath(task.reportId);
     if (!existsSync(filePath)) {
-      return { success: false, error: "文件不存在" };
+      return { success: false, error: '文件不存在' };
     }
 
     unlinkSync(filePath);
@@ -353,16 +327,14 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
   }
 
   /** 删除任务记录（通过任务ID） */
-  async function deleteTask(
-    taskId: string
-  ): Promise<{ success: boolean; error?: string }> {
+  async function deleteTask(taskId: string): Promise<{ success: boolean; error?: string }> {
     const task = tasks.get(taskId);
     if (!task) {
-      return { success: false, error: "任务不存在" };
+      return { success: false, error: '任务不存在' };
     }
 
-    if (task.status === "processing") {
-      return { success: false, error: "任务正在处理中，无法删除" };
+    if (task.status === 'processing') {
+      return { success: false, error: '任务正在处理中，无法删除' };
     }
 
     await deleteTaskFromDb(taskId);
@@ -378,7 +350,7 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
       clearInterval(cleanupTimer);
     }
     await database.close();
-    console.log("🛑 任务管理器已关闭");
+    console.log('🛑 任务管理器已关闭');
   }
   return {
     init,
@@ -391,7 +363,7 @@ export function createTaskManager(config: Partial<TaskManagerConfig> = {}) {
     list,
     deleteFile,
     deleteTask,
-    shutdown
+    shutdown,
   };
 }
 /** 将数据库行转换为 Task 对象 */
@@ -406,13 +378,13 @@ function rowToTask(row: TaskRow): Task {
     ...(row.file_path ? { filePath: row.file_path } : {}),
     ...(row.content_type ? { contentType: row.content_type } : {}),
     createdAt: new Date(row.created_at),
-    data: {}
+    data: {},
   };
 
   if (row.started_at) task.startedAt = new Date(row.started_at);
   if (row.completed_at) task.completedAt = new Date(row.completed_at);
   if (row.error_code) {
-    task.error = { code: row.error_code, message: row.error_message || "" };
+    task.error = { code: row.error_code, message: row.error_message || '' };
   }
 
   return task;
@@ -428,10 +400,10 @@ async function loadTasks(): Promise<Map<string, Task>> {
     // 将处理中的任务标记为失败（服务重启）
     await database.run(
       `UPDATE tasks SET status = 'failed', completed_at = ?, error_code = 'SERVER_RESTART', error_message = '服务重启，任务中断' WHERE status IN ('pending', 'processing')`,
-      [new Date().toISOString()]
+      [new Date().toISOString()],
     );
 
-    const rows = await database.all<TaskRow>("SELECT * FROM tasks");
+    const rows = await database.all<TaskRow>('SELECT * FROM tasks');
     for (const row of rows) {
       const task = rowToTask(row);
       tasks.set(task.id, task);
@@ -439,7 +411,7 @@ async function loadTasks(): Promise<Map<string, Task>> {
 
     console.log(`📂 从数据库加载了 ${tasks.size} 个任务`);
   } catch (err) {
-    console.error("⚠️ 加载任务失败:", err);
+    console.error('⚠️ 加载任务失败:', err);
   }
 
   return tasks;
@@ -463,21 +435,21 @@ async function saveTask(task: Task): Promise<void> {
       task.startedAt?.toISOString() || null,
       task.completedAt?.toISOString() || null,
       task.error?.code || null,
-      task.error?.message || null
-    ]
+      task.error?.message || null,
+    ],
   );
 }
 
 /** 删除任务记录 */
 async function deleteTaskFromDb(taskId: string): Promise<void> {
   // await database.run("DELETE FROM task_logs WHERE task_id = ?", [taskId]);
-  await database.run("DELETE FROM tasks WHERE id = ?", [taskId]);
+  await database.run('DELETE FROM tasks WHERE id = ?', [taskId]);
 }
 
 /** 写入任务日志到数据库 */
 async function writeTaskLog(
   task: Task,
-  event: "created" | "started" | "completed" | "failed"
+  event: 'created' | 'started' | 'completed' | 'failed',
 ): Promise<void> {
   const duration =
     task.startedAt && task.completedAt
@@ -497,83 +469,39 @@ async function writeTaskLog(
       duration,
       task.error?.code || null,
       task.error?.message || null,
-      new Date().toISOString()
-    ]
+      new Date().toISOString(),
+    ],
   );
 }
 
 /** 生成规范的文件名 */
-function generateFilename(
-  templateId: string,
-  reportId: string,
-  format: OutputFormat
-): string {
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[-:]/g, "")
-    .replace("T", "_")
-    .slice(0, 15);
+function generateFilename(templateId: string, reportId: string): string {
+  const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').slice(0, 15);
   const shortId = reportId.slice(0, 8);
-  return `${templateId}_${timestamp}_${shortId}.${FORMAT_EXTENSIONS[format]}`;
+  return `${templateId}_${timestamp}_${shortId}.pdf`;
 }
 
 /** 获取报告文件存储路径 */
-function getFilePath(reportId: string, format: OutputFormat): string {
-  const ext = FORMAT_EXTENSIONS[format];
-  return join(FILES_DIR, `${reportId}.${ext}`);
+function getFilePath(reportId: string): string {
+  return join(FILES_DIR, `${reportId}.pdf`);
 }
 
 /** 保存报告文件到磁盘 */
-function saveReportFile(
-  reportId: string,
-  format: OutputFormat,
-  buffer: Buffer
-): void {
+function saveReportFile(reportId: string, buffer: Buffer): void {
   ensureDir(FILES_DIR);
-  const filePath = getFilePath(reportId, format);
+  const filePath = getFilePath(reportId);
   writeFileSync(filePath, buffer);
   console.log(`💾 报告文件已保存: ${filePath}`);
 }
 
-/** 任务管理器接口 */
-// export interface TaskManager {
-//   /** 初始化（加载数据库数据） */
-//   init: () => Promise<void>;
-//   create: (request: CreateTaskRequest) => Promise<Task>;
-//   get: (taskId: string) => Task | undefined;
-//   getByReportId: (reportId: string) => Task | undefined;
-//   getResponse: (taskId: string) => TaskResponse | undefined;
-//   getResult: (
-//     taskId: string
-//   ) => { buffer: Buffer; filename: string; contentType: string } | undefined;
-//   getResultByReportId: (
-//     reportId: string
-//   ) => { buffer: Buffer; filename: string; contentType: string } | undefined;
-//   getStatus: () => {
-//     total: number;
-//     queue: number;
-//     processing: number;
-//     maxConcurrent: number;
-//     pending: number;
-//     completed: number;
-//     failed: number;
-//   };
-//   list: (status?: TaskStatus) => TaskResponse[];
-//   deleteFile: (
-//     reportId: string
-//   ) => Promise<{ success: boolean; error?: string }>;
-//   deleteTask: (taskId: string) => Promise<{ success: boolean; error?: string }>;
-//   shutdown: () => Promise<void>;
-// }
-
 /** 规范化错误 */
 function normalizeError(err: unknown): TaskError {
-  if (typeof err === "object" && err !== null && "code" in err) {
+  if (typeof err === 'object' && err !== null && 'code' in err) {
     return err as TaskError;
   }
   return {
-    code: "INTERNAL_ERROR",
-    message: err instanceof Error ? err.message : String(err)
+    code: 'INTERNAL_ERROR',
+    message: err instanceof Error ? err.message : String(err),
   };
 }
 

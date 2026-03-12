@@ -1,11 +1,10 @@
-import sqlite3 from 'sqlite3';
-import { mkdirSync, existsSync } from 'fs';
-import { dirname } from 'path';
+import sqlite3 from "sqlite3";
+import { mkdirSync, existsSync } from "fs";
+import { dirname } from "path";
 
 /** 数据库文件路径 */
-const DB_PATH = 'data/fileservice.db';
+const DB_PATH = "data/fileservice.db";
 
-/** SQLite 数据库包装类 - Promise 风格 */
 class Database {
   private db: sqlite3.Database | null = null;
   private initialized = false;
@@ -21,13 +20,13 @@ class Database {
     }
 
     return new Promise((resolve, reject) => {
-      this.db = new sqlite3.Database(DB_PATH, (err) => {
+      this.db = new sqlite3.Database(DB_PATH, err => {
         if (err) {
           reject(err);
           return;
         }
         this.initialized = true;
-        console.log('📦 SQLite 数据库已连接');
+        console.log("📦 SQLite 数据库已连接");
         this.createTables().then(resolve).catch(reject);
       });
     });
@@ -73,11 +72,17 @@ class Database {
     `);
 
     // 创建索引
-    await this.run('CREATE INDEX IF NOT EXISTS idx_tasks_report_id ON tasks(report_id)');
-    await this.run('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)');
-    await this.run('CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id)');
+    await this.run(
+      "CREATE INDEX IF NOT EXISTS idx_tasks_report_id ON tasks(report_id)"
+    );
+    await this.run(
+      "CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)"
+    );
+    await this.run(
+      "CREATE INDEX IF NOT EXISTS idx_task_logs_task_id ON task_logs(task_id)"
+    );
 
-    console.log('📋 数据库表结构已就绪');
+    console.log("📋 数据库表结构已就绪");
   }
 
   /** 执行 SQL (INSERT/UPDATE/DELETE) */
@@ -91,7 +96,10 @@ class Database {
   }
 
   /** 查询单条记录 */
-  get<T = unknown>(sql: string, params: unknown[] = []): Promise<T | undefined> {
+  get<T = unknown>(
+    sql: string,
+    params: unknown[] = []
+  ): Promise<T | undefined> {
     return new Promise((resolve, reject) => {
       this.db!.get(sql, params, (err, row) => {
         if (err) reject(err);
@@ -117,11 +125,11 @@ class Database {
         resolve();
         return;
       }
-      this.db.close((err) => {
+      this.db.close(err => {
         if (err) reject(err);
         else {
           this.initialized = false;
-          console.log('📦 SQLite 数据库已关闭');
+          console.log("📦 SQLite 数据库已关闭");
           resolve();
         }
       });
@@ -131,4 +139,3 @@ class Database {
 
 /** 全局数据库实例 */
 export const database = new Database();
-
