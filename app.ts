@@ -1,8 +1,8 @@
-import { serve } from "@hono/node-server";
-import app, { printStartupInfo } from "./src/index.ts";
-import { browserPool } from "./src/core/browserPool.ts";
-import { taskManager } from "./src/core/taskManager.ts";
-import { createServer } from "net";
+import { serve } from '@hono/node-server';
+import app, { printStartupInfo } from './src/index.ts';
+import { browserPool } from './src/core/browserPool.ts';
+import { taskManager } from './src/core/taskManager/taskManager.ts';
+import { createServer } from 'net';
 
 const port = Number(process.env.PORT) || 4000;
 
@@ -10,14 +10,14 @@ const port = Number(process.env.PORT) || 4000;
 function isPortInUse(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = createServer();
-    server.once("error", (err: any) => {
-      if (err.code === "EADDRINUSE") {
+    server.once('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
         resolve(true);
       } else {
         resolve(false);
       }
     });
-    server.once("listening", () => {
+    server.once('listening', () => {
       server.close();
       resolve(false);
     });
@@ -31,11 +31,11 @@ async function start() {
   const portInUse = await isPortInUse(port);
   if (portInUse) {
     console.error(`❌ 端口 ${port} 已被占用`);
-    console.error("");
-    console.error("   解决方案:");
+    console.error('');
+    console.error('   解决方案:');
     console.error(`   1. 使用其他端口: PORT=4001 pnpm dev`);
     console.error(`   2. 杀掉占用进程: lsof -ti:${port} | xargs kill -9`);
-    console.error("");
+    console.error('');
     process.exit(1);
   }
 
@@ -45,11 +45,11 @@ async function start() {
   const server = serve(
     {
       fetch: app.fetch,
-      port
+      port,
     },
     () => {
       printStartupInfo();
-    }
+    },
   );
 
   /** 优雅关闭 */
@@ -60,15 +60,15 @@ async function start() {
     await taskManager.shutdown();
     await browserPool.shutdown();
 
-    console.log("👋 服务已关闭");
+    console.log('👋 服务已关闭');
     process.exit(0);
   }
 
-  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 }
 
 start().catch(err => {
-  console.error("❌ 启动失败:", err);
+  console.error('❌ 启动失败:', err);
   process.exit(1);
 });

@@ -5,7 +5,9 @@
   "type": "module",
   "main": "app.ts",
   "scripts": {
-    "dev": "PORT=4000 node --watch --experimental-strip-types --experimental-transform-types app.ts"
+    "dev": "PORT=4000 node --watch --experimental-strip-types --experimental-transform-types app.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@types/generic-pool": "^3.8.3",
-    "@types/sqlite3": "^5.1.0"
+    "@types/sqlite3": "^5.1.0",
+    "vitest": "^4.1.0"
   }
 }
