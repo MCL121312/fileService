@@ -9,25 +9,29 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "puppeteer": {
+    "skipDownload": true
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.32.0",
+  "packageManager": "pnpm@10.33.0",
   "dependencies": {
-    "@hono/node-server": "^1.19.6",
-    "@scalar/api-reference": "^1.48.5",
-    "@scalar/hono-api-reference": "^0.9.25",
+    "@hono/node-server": "^1.19.14",
+    "@scalar/api-reference": "^1.52.3",
+    "@scalar/hono-api-reference": "^0.10.9",
+    "better-sqlite3": "^12.9.0",
     "generic-pool": "^3.9.0",
-    "hono": "^4.10.6",
-    "puppeteer": "^24.31.0",
-    "sqlite3": "^5.1.7",
-    "typescript": "^5.9.3",
-    "vue": "^3.5.25",
-    "zod": "^4.1.13"
+    "hono": "^4.12.14",
+    "puppeteer": "^24.41.0",
+    "typescript": "^6.0.3",
+    "vue": "^3.5.32",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/generic-pool": "^3.8.3",
-    "@types/sqlite3": "^5.1.0",
-    "vitest": "^4.1.0"
+    "node-gyp": "^12.2.0",
+    "vitest": "^4.1.4"
   }
 }

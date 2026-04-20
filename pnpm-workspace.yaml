@@ -1,8 +1,4 @@
-packages:
-  - "."
-
-ignoredBuiltDependencies:
-  - puppeteer
-
-onlyBuiltDependencies:
-  - sqlite3
+allowBuilds:
+  better-sqlite3: true
+  puppeteer: true
+  vue-demi: true
